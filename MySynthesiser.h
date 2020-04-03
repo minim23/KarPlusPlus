@@ -10,6 +10,9 @@
 
 #pragma once
 #include "Oscillators.h"
+#include "BasicDelayLine.h"
+#include "Limiter.h"
+#include "SubtractiveSynth.h"
 
 // ===========================
 // ===========================
@@ -50,6 +53,10 @@ public:
         // ====== Q FILTER SMOOTHING =======
         smoothQ.reset(sr, 0.002f); // Set samplerate and smoothing of 20ms
         smoothQ.setCurrentAndTargetValue(*qAmount);
+
+        //limiter.Setup(20, 500, sampleRate);
+
+        delay.setSize(sr * 10); // Set maxium size of Delay to 10 seconds which should be sufficient to play even the lowest frequencies
     }
 
     // ====== INITIALIZATE PARAMETER POINTERS =======
@@ -84,8 +91,11 @@ public:
         playing = true;
         ending = false;
 
-        // Allocate frequency
-        freq = MidiMessage::getMidiNoteInHertz(midiNoteNumber);
+        // ====== MIDI TO DELAYTIME =======
+        freq = MidiMessage::getMidiNoteInHertz(midiNoteNumber); // Get freq from Midi
+        float delayFreq = sr / freq; // Get delaytime from freq
+        delay.setDelayTimeInSamples(delayFreq); // Set delaytime to same amount
+
 
         //osc.setFrequency(freq);
 
@@ -122,14 +132,14 @@ public:
     {
         if (playing) // check to see if this voice should be playing
         {
-            
             // ====== SMOOTHING Q =======
             smoothQ.setTargetValue(*qAmount);
             float smoothedQ = smoothQ.getNextValue();
 
             // ====== RESONATOR SETUP =======
-            resonator.setCoefficients(IIRCoefficients::makeBandPass(sr, freq, smoothedQ));
-            detunedResonator.setCoefficients(IIRCoefficients::makeBandPass(sr, freq + *beatAmount, smoothedQ));
+            //resonator.setCoefficients(IIRCoefficients::makeBandPass(sr, freq, smoothedQ));
+            //detunedResonator.setCoefficients(IIRCoefficients::makeBandPass(sr, freq + *beatAmount, smoothedQ));
+            subSynth.setFilter(sr, freq + *beatAmount, smoothedQ);
             
             // ====== ENVELOPE SETUP =======
             ADSR::Parameters envParams;
@@ -142,21 +152,32 @@ public:
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
             {
-                
+                delay.setFeedback(0.99f);
+
                 float envVal = env.getNextSample(); // Envelope Calculation
+
                 float currentSample = random.nextFloat(); // White Noise
+
              
                 // ====== SAMPLE PROCESSING =======
-                currentSample = (resonator.processSingleSampleRaw(currentSample) + detunedResonator.processSingleSampleRaw(currentSample)) // Add both resonators
+                currentSample = (
+                                 delay.process(currentSample)
+                                +(subSynth.process() * smoothedQ) //Adjust Volume relative to Q Amount in Filter
+                                 )
                                 * 0.5f        // Half the Volume
-                                * smoothedQ      //Adjust Volume relative to Q Amount in Filter
+                                * 0.2f        // Output Volume
+                                      
                                 * envVal;     // Multiply with Envelope
+
+                currentSample = limiter.process(currentSample); // Waveshaping Limiter
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
                 {
-                    outputBuffer.addSample(chan, sampleIndex, currentSample 
-                                          * 0.2); // Output Volume
+                    outputBuffer.addSample(
+                                          chan, sampleIndex, 
+                                          currentSample 
+                                          ); 
                 }
                 // ====== END SOUND =======
                 if (ending)
@@ -205,10 +226,16 @@ private:
     // ====== FILTER SMOOTHING ======= 
     SmoothedValue<float, ValueSmoothingTypes::Linear> smoothQ;
 
+    Limiter limiter;
 
-    // ====== RESONANT BANDPASS FILTER =======   
+
+    // ====== SUBTRACTIVE SYNTH =======   
+    SubtractiveSynth subSynth;
+
     IIRFilter resonator, detunedResonator;
-    float resGain = 1000.0f; // Sets same value for Q and Gain in Resonator
+    Random random; // for White Noise
+
+    BasicDelayLine delay;
 
     float freq; // Frequency of Synth
 
@@ -216,7 +243,7 @@ private:
 
     ADSR env; // JUCE ADSR Envelope
 
-    Random random; // for White Noise
+
 
 };
 

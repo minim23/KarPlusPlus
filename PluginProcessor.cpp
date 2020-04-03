@@ -27,8 +27,8 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     // Parameter Layout
     // id, description, min val, max val, default val
     std::make_unique<AudioParameterFloat>("detune", "Detune (Hz)", 0.0f, 20.0f, 2.0f),
-    std::make_unique<AudioParameterFloat>("q", "Q", 1.0f, 2000.0f, 20.0f),
-    std::make_unique<AudioParameterFloat>("attack", "Attack", 0.001f, 5.0f, 0.5f),
+    std::make_unique<AudioParameterFloat>("q", "Q", 10.0f, 2000.0f, 20.0f),
+    std::make_unique<AudioParameterFloat>("attack", "Attack", 0.01f, 5.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("decay", "Decay", 0.0f, 0.25f, 0.25f),
     std::make_unique<AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("release", "Release", 0.1f, 5.0f, 1.0f),
