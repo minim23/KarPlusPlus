@@ -112,6 +112,12 @@ public:
         // ====== MIDI TO DELAYTIME =======
         freq = MidiMessage::getMidiNoteInHertz(midiNoteNumber); // Get freq from Midi
 
+        // ====== MIDI TO DELAYTIME =======
+        for (int i = 0; i < 100; i++)
+        {
+            float Impulse = random.nextFloat();
+        }
+
         env.reset(); // clear out envelope before re-triggering it
         env.noteOn(); // start envelope
     }
@@ -154,7 +160,7 @@ public:
             karplusStrong.setDelaytime(freq, /**beatAmount,*/ *instabilityAmount);
 
             // ====== FEEDBACK SETUP =======
-            feedbacker1.setDelayTimeInSamples(8000 + (sr / *beatAmount));
+            feedbacker1.setDelayTimeInSamples(sr / *beatAmount);
             feedbacker2.setDelayTimeInSamples(8000 + (sr / *beatAmount));
 
             feedbacker1.setFeedback(*feedbackAmount);
@@ -178,17 +184,20 @@ public:
                 karplusStrong.setDampening(*dampAmount);
            
                 // ====== WHITE NOISE =======
-                float currentSample = random.nextFloat();
+                float currentSample = random.nextFloat() * envVal;
 
                 // ====== SAMPLE PROCESSING =======
-                currentSample = (karplusStrong.process(currentSample + tanh(feedbacker2.process((subSynth.process() * smoothedQ) * *feedbackAmount))) //Karplus Strong
-                                +(subSynth.process(currentSample + tanh(feedbacker1.process(karplusStrong.process(currentSample) * *feedbackAmount)) ) * smoothedQ)) //Subtractive Synth with adjusted Volume relative to Q Amount in Filter
+                currentSample = karplusStrong.process(currentSample + (tanh(feedbacker1.process(karplusStrong.process(currentSample)) * *feedbackAmount))) //Karplus Strong
+                                + (tanh(feedbacker1.process(karplusStrong.process(currentSample))) * *feedbackAmount) // Feedbacked Signal
+                                //+(subSynth.process(currentSample + tanh(feedbacker1.process(karplusStrong.process(currentSample) * *feedbackAmount)) ) * smoothedQ)) //Subtractive Synth with adjusted Volume relative to Q Amount in Filter
                                 * 0.5f        // Half the Volume
                                 * 0.1f        // Output Volume                                     
-                                * envVal;     // Multiply with Envelope
+                                ;     // Multiply with Envelope
 
                 // ====== WAVESHAPING LIMITER =======
-                currentSample = limiter.process(currentSample, 1.0f);
+                currentSample = tanh(currentSample);
+                
+                //currentSample = limiter.process(currentSample, 0.95f);
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
@@ -200,14 +209,14 @@ public:
                 }
 
                 // ====== END SOUND =======
-                if (ending)
+                /*if (ending)
                 {
                     if (envVal < 0.0001f) // Clear note if envelope value is very small
                     {
                         clearCurrentNote();
                         playing = false;
                     }
-                }
+                }*/
             }
                     
         }

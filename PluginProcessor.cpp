@@ -34,7 +34,7 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
 
     std::make_unique<AudioParameterFloat>("q", "Q", 10.0f, 2000.0f, 20.0f),
 
-    std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.95f, 0.0f),
+    std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.3f, 0.0f),
 
     std::make_unique<AudioParameterFloat>("attack", "Attack", 0.01f, 5.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("decay", "Decay", 0.0f, 0.25f, 0.25f),
