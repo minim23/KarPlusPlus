@@ -63,7 +63,14 @@ private:
     // Parameter Setup
     AudioProcessorValueTreeState parameters;
     std::atomic<float>* detuneParam;
+
+    std::atomic<float>* dampParam;
+    std::atomic<float>* tailParam;
+    std::atomic<float>* instabilityParam;
+
     std::atomic<float>* qParam;
+
+    std::atomic<float>* feedbackParam;
 
     std::atomic<float>* attackParam;
     std::atomic<float>* decayParam;

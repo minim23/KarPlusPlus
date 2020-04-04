@@ -27,7 +27,7 @@ public:
     float process(float inSamp)
     {
         float outVal = readVal();
-        writeVal(inSamp + feedback*outVal);     // note the feedback here, scaling the output back in to the delay
+        writeVal(inSamp + feedback * outVal);     // note the feedback here, scaling the output back in to the delay
         float floor(outVal); // calculates interpolation
         return floor;
     }

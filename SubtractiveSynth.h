@@ -22,6 +22,15 @@ public:
         resonator2.setCoefficients(IIRCoefficients::makeBandPass(sampleRate, freq, q));
     }
 
+    void setFilter(float sampleRate, float freq, float instabilityAmount, float q)
+    {
+        instabilityAmount = random.nextFloat() * instabilityAmount;
+
+        // Two Bandpass Filter to accumulate higher Q Values
+        resonator1.setCoefficients(IIRCoefficients::makeBandPass(sampleRate, freq + instabilityAmount, q));
+        resonator2.setCoefficients(IIRCoefficients::makeBandPass(sampleRate, freq - instabilityAmount, q));
+    }
+
     /*void setFilterAmount(int filterAmount);
     {
         voiceCount = filterAmount;
@@ -39,11 +48,11 @@ public:
 
     float process(float input)
     {
-        float currentSample = resonator1.processSingleSampleRaw(input) // Processes the input sample
-                            + resonator2.processSingleSampleRaw(currentSample)
+        input = resonator1.processSingleSampleRaw(input) // Processes the input sample
+                            + resonator2.processSingleSampleRaw(input)
                             * 0.5f; // Adjust volume
 
-        return currentSample;
+        return input;
     }
 
 private:

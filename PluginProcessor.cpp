@@ -27,7 +27,15 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     // Parameter Layout
     // id, description, min val, max val, default val
     std::make_unique<AudioParameterFloat>("detune", "Detune (Hz)", 0.0f, 20.0f, 2.0f),
+
+    std::make_unique<AudioParameterFloat>("damp", "Damp", 0.0f, 1.0f, 1.0f),
+    std::make_unique<AudioParameterFloat>("tail", "Tail", 0.0f, 0.95f, 0.9f),
+    std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 0.0f),
+
     std::make_unique<AudioParameterFloat>("q", "Q", 10.0f, 2000.0f, 20.0f),
+
+    std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.95f, 0.0f),
+
     std::make_unique<AudioParameterFloat>("attack", "Attack", 0.01f, 5.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("decay", "Decay", 0.0f, 0.25f, 0.25f),
     std::make_unique<AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 0.5f),
@@ -35,7 +43,15 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
         })
 {
     detuneParam = parameters.getRawParameterValue("detune");
+
+    dampParam = parameters.getRawParameterValue("damp");
+    tailParam = parameters.getRawParameterValue("tail");
+    instabilityParam = parameters.getRawParameterValue("instability");
+
     qParam = parameters.getRawParameterValue("q");
+
+    feedbackParam = parameters.getRawParameterValue("feedback");
+
     attackParam = parameters.getRawParameterValue("attack");
     decayParam = parameters.getRawParameterValue("decay");
     sustainParam = parameters.getRawParameterValue("sustain");
@@ -52,7 +68,7 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     for (int i = 0; i < voiceCount; i++)
     {
         MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
-        v->setParameterPointers(detuneParam, qParam, attackParam, decayParam, sustainParam, releaseParam);
+        v->setParameterPointers(detuneParam, dampParam, tailParam, instabilityParam, qParam, feedbackParam, attackParam, decayParam, sustainParam, releaseParam);
     }
 }
 
