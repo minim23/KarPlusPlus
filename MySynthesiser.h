@@ -47,14 +47,14 @@ public:
     MySynthVoice() {}
 
     // ====== INITIALIZATION FOR PREPARE TO PLAY =======
-    void init(float sampleRate)
+    void init(int sampleRate)
     {
         sr = sampleRate;
 
         karplusStrong.setup(sr);
         
-        feedbacker1.setSize(sr * 10);
-        feedbacker2.setSize(sr * 10);
+        //feedbacker1.setSize(sr * 10);
+        //feedbacker2.setSize(sr * 10);
 
     }
 
@@ -65,8 +65,6 @@ public:
     std::atomic<float>* dampIn,
     std::atomic<float>* tailIn,
     std::atomic<float>* instabilityIn,
-
-    std::atomic<float>* qIn,
 
     std::atomic<float>* feedbackIn,
 
@@ -80,8 +78,6 @@ public:
         dampAmount = dampIn;
         tailAmount = tailIn;
         instabilityAmount = instabilityIn;
-
-        qAmount = qIn;
 
         feedbackAmount = feedbackIn;
 
@@ -109,6 +105,8 @@ public:
         freq = MidiMessage::getMidiNoteInHertz(midiNoteNumber); // Get freq from Midi
 
         karplusStrong.setDampening(*dampAmount);
+
+
 
         env.reset(); // clear out envelope before re-triggering it
         env.noteOn(); // start envelope
@@ -148,11 +146,11 @@ public:
             karplusStrong.setDelaytime(freq, *instabilityAmount);
 
             // ====== FEEDBACK SETUP =======
-            feedbacker1.setDelayTimeInSamples(sr / *beatAmount);
-            feedbacker2.setDelayTimeInSamples(8000 + (sr / *beatAmount));
+            //feedbacker1.setDelayTimeInSamples(sr / *beatAmount);
+            //feedbacker2.setDelayTimeInSamples(8000 + (sr / *beatAmount));
 
-            feedbacker1.setFeedback(*feedbackAmount);
-            feedbacker2.setFeedback(*feedbackAmount);
+            //feedbacker1.setFeedback(*feedbackAmount);
+            //feedbacker2.setFeedback(*feedbackAmount);
             
             // ====== ENVELOPE SETUP =======
             ADSR::Parameters envParams;
@@ -162,34 +160,32 @@ public:
             envParams.release = *release;
             env.setParameters(envParams);
 
-            /*
-            float impulse;
-
-            for (int i = 0; i < 1; i++)
-            {
-                impulse = random.nextFloat();
-            }
-            */
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
-            {
+            {                               
                 float envVal = env.getNextSample(); // Envelope Calculation
                 
                 // ====== KARPLUS STRONG PARAMERTS =======
                 karplusStrong.setTail(*tailAmount);
            
+                // ====== IMPULSE =======
+                /*
+                for (int i = 0; i < 1000; i++)
+                {
+                    impulse = random.nextFloat();
+                }
+                */
+
                 // ====== WHITE NOISE =======
-                float noise = random.nextFloat() * envVal;
+                float noise = random.nextFloat();
 
                 // ====== SAMPLE PROCESSING =======
-                float currentSample = karplusStrong.process(noise) //Karplus Strong + Feedback
-                                //+ (tanh(feedbacker1.process(karplusStrong.process(impulse))) * *feedbackAmount) // Feedbacked Signal
+                float currentSample = karplusStrong.process(noise * envVal) //Karplus Strong + Feedback
                                 * 0.5f        // Half the Volume
                                 * 0.1f;        // Output Volume        
 
                 // ====== WAVESHAPING LIMITER =======
-                //currentSample = tanh(currentSample);
-                
+                //currentSample = tanh(currentSample);                
                 //currentSample = limiter.process(currentSample, 0.95f);
                                 
                 // ====== CHANNEL ASSIGNMENT =======
@@ -268,7 +264,7 @@ private:
 
     ADSR env; // JUCE ADSR Envelope
 
-
+    float impulse;
         //IIRFilter resonator, detunedResonator;
 };
 

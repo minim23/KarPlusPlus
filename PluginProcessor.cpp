@@ -30,9 +30,7 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
 
     std::make_unique<AudioParameterFloat>("damp", "Damp", 0.0f, 1.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("tail", "Tail", 0.0f, 0.95f, 0.9f),
-    std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 10.0f),
-
-    std::make_unique<AudioParameterFloat>("q", "Q", 1.0f, 10.0f, 2.0f),
+    std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 0.0f),
 
     std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.3f, 0.2f),
 
@@ -47,8 +45,6 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     dampParam = parameters.getRawParameterValue("damp");
     tailParam = parameters.getRawParameterValue("tail");
     instabilityParam = parameters.getRawParameterValue("instability");
-
-    qParam = parameters.getRawParameterValue("q");
 
     feedbackParam = parameters.getRawParameterValue("feedback");
 
@@ -68,7 +64,7 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     for (int i = 0; i < voiceCount; i++)
     {
         MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
-        v->setParameterPointers(detuneParam, dampParam, tailParam, instabilityParam, qParam, feedbackParam, attackParam, decayParam, sustainParam, releaseParam);
+        v->setParameterPointers(detuneParam, dampParam, tailParam, instabilityParam, feedbackParam, attackParam, decayParam, sustainParam, releaseParam);
     }
 }
 

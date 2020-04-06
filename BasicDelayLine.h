@@ -50,7 +50,7 @@ public:
     }
     
     /// set the actual delay time in samples
-    void setDelayTimeInSamples(int delTime)
+    void setDelayTimeInSamples(float delTime)
     {
         delayTimeInSamples = delTime;
         readPos = writePos - delayTimeInSamples;
@@ -64,7 +64,7 @@ public:
     }
     
     /// initialise the float array to a given maximum size (your specified delay time must always be less than this)
-    void setSize(int newSize)
+    void setSize(float newSize)
     {
         size = newSize;
         buffer = new float[size];
