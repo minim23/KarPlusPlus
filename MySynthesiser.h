@@ -13,6 +13,7 @@
 #include "BasicDelayLine.h"
 #include "Limiter.h"
 #include "KarplusStrong.h"
+#include "Feedback.h"
 
 // ===========================
 // ===========================
@@ -51,33 +52,36 @@ public:
         sr = sampleRate;
 
         karplusStrong.setup(sr);
-        
-        feedback.setSize(sr * 10);
+        feedback.setup(sr);
 
     }
 
     // ====== INITIALIZATE PARAMETER POINTERS =======
     void setParameterPointers(
-    std::atomic<float>* detuneIn, 
+
 
     std::atomic<float>* dampIn,
     std::atomic<float>* tailIn,
     std::atomic<float>* instabilityIn,
 
+    std::atomic<float>* delayTimeIn,
     std::atomic<float>* feedbackIn,
+    std::atomic<float>* hiPassIn,
+    std::atomic<float>* loPassIn,
 
     std::atomic<float>* attackIn,
     std::atomic<float>* decayIn,
     std::atomic<float>* sustainIn,
     std::atomic<float>* releaseIn)
     {
-        beatAmount = detuneIn;
-
         dampAmount = dampIn;
         tailAmount = tailIn;
         instabilityAmount = instabilityIn;
 
         feedbackAmount = feedbackIn;
+        delayTime = delayTimeIn;
+        hiPassAmount = hiPassIn;
+        loPassAmount = loPassIn;      
 
         attack = attackIn;
         decay = decayIn;
@@ -145,10 +149,6 @@ public:
 
             // ====== SYNTHESISER NOTE SETUP =======
             karplusStrong.setDelaytime(freq, *instabilityAmount);
-
-            // ====== FEEDBACK SETUP =======
-            feedback.setDelayTimeInSamples(sr / *beatAmount + 1);
-            feedback.setFeedback(0.999);
             
             // ====== ENVELOPE SETUP =======
             ADSR::Parameters envParams;
@@ -174,20 +174,25 @@ public:
                 
                 // ====== KARPLUS STRONG PARAMERTS =======
                 karplusStrong.setTail(*tailAmount);
-           
+
+                // ====== FEEDBACK =======
+                feedback.setDelaytime(*delayTime);
+                feedback.setFeedback(*feedbackAmount);
+                feedback.setFilter(*loPassAmount, *hiPassAmount);
+
                 // ====== IMPULSE =======
                 float exciter = random.nextFloat() * impulseVal;
 
                 // ====== SAMPLE PROCESSING =======
-                float currentSample = karplusStrong.process(exciter) //Karplus Strong + Feedback
-                                      + feedback.process(currentSample * *feedbackAmount)
-                                      * 0.5f        // Half the Volume
+                float currentSample = karplusStrong.process(exciter + feedback.process(currentSample * *feedbackAmount)) //Karplus Strong + Feedback
+                                      + feedback.process(karplusStrong.process(exciter) * *feedbackAmount)
+                                      * 0.3f        // Half the Volume
                                       * 0.1f
                                       * envVal;        // Output Volume        
 
                 // ====== WAVESHAPING LIMITER =======
                 //currentSample = tanh(currentSample);                
-                //currentSample = limiter.process(currentSample, 0.95f);
+                currentSample = limiter.process(currentSample, 0.95f);
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
@@ -231,7 +236,10 @@ private:
     bool ending = false;
 
     // ====== PARAMETER VALUES ======= 
-    std::atomic<float>* beatAmount;
+    std::atomic<float>* delayTime;
+    std::atomic<float>* hiPassAmount;
+    std::atomic<float>* loPassAmount;
+    std::atomic<float>* feedbackAmount;
 
     std::atomic<float>* dampAmount;
     std::atomic<float>* tailAmount;
@@ -239,7 +247,7 @@ private:
 
     std::atomic<float>* qAmount;
 
-    std::atomic<float>* feedbackAmount;
+
 
     std::atomic<float>* attack;
     std::atomic<float>* decay;
@@ -251,7 +259,7 @@ private:
 
     Limiter limiter;
 
-    BasicDelayLine feedback;
+    Feedback feedback;
 
     // ====== KARPLUS STRONG =======   
     KarplusStrong karplusStrong;

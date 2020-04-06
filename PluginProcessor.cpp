@@ -30,9 +30,10 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     std::make_unique<AudioParameterFloat>("tail", "Tail", 0.0f, 0.99f, 0.9f),
     std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 0.0f),
 
-    std::make_unique<AudioParameterFloat>("detune", "Detune (Hz)", 0.0f, 20.0f, 5.0f),
-
     std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.99f, 0.0f),
+    std::make_unique<AudioParameterFloat>("delaytime", "Delaytime", 0.0f, 20.0f, 5.0f),
+    std::make_unique<AudioParameterFloat>("hipass", "HiPass", 20.0f, 2000.0f, 20.0f),
+    std::make_unique<AudioParameterFloat>("lopass", "LoPass", 2000.0f, 16000.0f, 16000.0f),
 
     std::make_unique<AudioParameterFloat>("attack", "Attack", 0.01f, 5.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("decay", "Decay", 0.0f, 0.25f, 0.25f),
@@ -40,13 +41,14 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     std::make_unique<AudioParameterFloat>("release", "Release", 0.5f, 5.0f, 5.0f)
         })
 {
-    detuneParam = parameters.getRawParameterValue("detune");
-
     dampParam = parameters.getRawParameterValue("damp");
     tailParam = parameters.getRawParameterValue("tail");
     instabilityParam = parameters.getRawParameterValue("instability");
 
     feedbackParam = parameters.getRawParameterValue("feedback");
+    delaytimeParam = parameters.getRawParameterValue("delaytime");
+    hiPassParam = parameters.getRawParameterValue("hipass");
+    loPassParam = parameters.getRawParameterValue("lopass");
 
     attackParam = parameters.getRawParameterValue("attack");
     decayParam = parameters.getRawParameterValue("decay");
@@ -64,7 +66,20 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     for (int i = 0; i < voiceCount; i++)
     {
         MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
-        v->setParameterPointers(detuneParam, dampParam, tailParam, instabilityParam, feedbackParam, attackParam, decayParam, sustainParam, releaseParam);
+        v->setParameterPointers(
+            dampParam,
+            tailParam,
+            instabilityParam,
+
+            feedbackParam,
+            delaytimeParam,
+            hiPassParam,
+            loPassParam,
+            
+            attackParam, 
+            decayParam, 
+            sustainParam, 
+            releaseParam);
     }
 }
 

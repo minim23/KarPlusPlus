@@ -19,7 +19,7 @@ public:
         sr = sampleRate; // Store samplerate for delaytime values
 
         // ====== DELAY SETUP =======
-        delay.setSize(sampleRate * 100); // Set maxium size of Delay to 10 seconds which should be sufficient to play even the lowest frequencies     
+        delay.setSize(sampleRate * 10); // Set maxium size of Delay to 10 seconds which should be sufficient to play even the lowest frequencies     
         
         // ====== SMOOTHED VALUES SETUP =======
         smoothFeedback.reset(sampleRate, 0.05f); // Set samplerate and smoothing of 20ms
