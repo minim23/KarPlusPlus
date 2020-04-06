@@ -12,7 +12,6 @@
 #include "Oscillators.h"
 #include "BasicDelayLine.h"
 #include "Limiter.h"
-#include "SubtractiveSynth.h"
 #include "KarplusStrong.h"
 
 // ===========================
@@ -53,8 +52,7 @@ public:
 
         karplusStrong.setup(sr);
         
-        //feedbacker1.setSize(sr * 10);
-        //feedbacker2.setSize(sr * 10);
+        feedback.setSize(sr * 10);
 
     }
 
@@ -106,10 +104,11 @@ public:
 
         karplusStrong.setDampening(*dampAmount);
 
-
-
         env.reset(); // clear out envelope before re-triggering it
         env.noteOn(); // start envelope
+
+        impulse.reset();
+        impulse.noteOn();
     }
     //--------------------------------------------------------------------------
     /// Called when a MIDI noteOff message is received
@@ -122,6 +121,8 @@ public:
     void stopNote(float /*velocity*/, bool allowTailOff) override
     {
         env.noteOff();
+        impulse.noteOff();
+
         ending = true;
     }
 
@@ -146,11 +147,8 @@ public:
             karplusStrong.setDelaytime(freq, *instabilityAmount);
 
             // ====== FEEDBACK SETUP =======
-            //feedbacker1.setDelayTimeInSamples(sr / *beatAmount);
-            //feedbacker2.setDelayTimeInSamples(8000 + (sr / *beatAmount));
-
-            //feedbacker1.setFeedback(*feedbackAmount);
-            //feedbacker2.setFeedback(*feedbackAmount);
+            feedback.setDelayTimeInSamples(sr / *beatAmount + 1);
+            feedback.setFeedback(0.999);
             
             // ====== ENVELOPE SETUP =======
             ADSR::Parameters envParams;
@@ -160,29 +158,32 @@ public:
             envParams.release = *release;
             env.setParameters(envParams);
 
+            ADSR::Parameters impulseParams;
+            impulseParams.attack = 0.01f;
+            impulseParams.decay = 0.1f;
+            impulseParams.sustain = 0.0f;
+            impulseParams.release = 0.1;
+            impulse.setParameters(impulseParams);
+
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
             {                               
+                // ====== ENVELOPES =======
                 float envVal = env.getNextSample(); // Envelope Calculation
+                float impulseVal = impulse.getNextSample(); // Impulse Calculation
                 
                 // ====== KARPLUS STRONG PARAMERTS =======
                 karplusStrong.setTail(*tailAmount);
            
                 // ====== IMPULSE =======
-                /*
-                for (int i = 0; i < 1000; i++)
-                {
-                    impulse = random.nextFloat();
-                }
-                */
-
-                // ====== WHITE NOISE =======
-                float noise = random.nextFloat();
+                float exciter = random.nextFloat() * impulseVal;
 
                 // ====== SAMPLE PROCESSING =======
-                float currentSample = karplusStrong.process(noise * envVal) //Karplus Strong + Feedback
-                                * 0.5f        // Half the Volume
-                                * 0.1f;        // Output Volume        
+                float currentSample = karplusStrong.process(exciter) //Karplus Strong + Feedback
+                                      + feedback.process(currentSample * *feedbackAmount)
+                                      * 0.5f        // Half the Volume
+                                      * 0.1f
+                                      * envVal;        // Output Volume        
 
                 // ====== WAVESHAPING LIMITER =======
                 //currentSample = tanh(currentSample);                
@@ -225,7 +226,7 @@ public:
     }
     //--------------------------------------------------------------------------
 private:
-    // ====== SETUP TO INDICATE IF A NOTE IS ON OR OFF =======   
+    // ====== NOTE ON/OFF =======   
     bool playing = false;
     bool ending = false;
 
@@ -250,7 +251,7 @@ private:
 
     Limiter limiter;
 
-    BasicDelayLine feedbacker1, feedbacker2;
+    BasicDelayLine feedback;
 
     // ====== KARPLUS STRONG =======   
     KarplusStrong karplusStrong;
@@ -263,8 +264,8 @@ private:
     float sr; // Samplerate
 
     ADSR env; // JUCE ADSR Envelope
+    ADSR impulse; // JUCE ADSR Envelope
 
-    float impulse;
         //IIRFilter resonator, detunedResonator;
 };
 

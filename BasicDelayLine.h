@@ -20,7 +20,6 @@ public:
     /// Destructor - called when the object is destroyed
     ~BasicDelayLine()
     {
-        delete buffer;      // clean up when the object is destroyed to avoid memory leaks
     }
     
     /// store a value in the delay and retrieve the sample at the current read position

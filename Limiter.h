@@ -24,6 +24,16 @@ public:
 
         return input;
     }
+
+    float foldback(float in, float threshold)
+    {
+        if (in > threshold || in < -threshold)
+        {
+            in = fabs(fabs(fmod(in - threshold, threshold * 4)) - threshold * 2) - threshold;
+        }
+        return in;
+    }
+
 private:
 
 };
