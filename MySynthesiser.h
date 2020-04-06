@@ -182,10 +182,9 @@ public:
                 float noise = random.nextFloat() * envVal;
 
                 // ====== SAMPLE PROCESSING =======
-                float currentSample = noise
-                    //karplusStrong.process(noise) //Karplus Strong + Feedback
+                float currentSample = karplusStrong.process(noise) //Karplus Strong + Feedback
                                 //+ (tanh(feedbacker1.process(karplusStrong.process(impulse))) * *feedbackAmount) // Feedbacked Signal
-                                * 0.0f        // Half the Volume
+                                * 0.5f        // Half the Volume
                                 * 0.1f;        // Output Volume        
 
                 // ====== WAVESHAPING LIMITER =======
