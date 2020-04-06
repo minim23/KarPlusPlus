@@ -51,12 +51,8 @@ public:
     {
         sr = sampleRate;
 
-        // ====== Q FILTER SMOOTHING =======
-        smoothQ.reset(sr, 0.002f); // Set samplerate and smoothing of 20ms
-        smoothQ.setCurrentAndTargetValue(*qAmount);
-
-        karplusStrong.setup(sr); // Send samplerate values to Karplus Strong
-
+        karplusStrong.setup(sr);
+        
         feedbacker1.setSize(sr * 10);
         feedbacker2.setSize(sr * 10);
 
@@ -81,9 +77,9 @@ public:
     {
         beatAmount = detuneIn;
 
-        dampAmount = dampIn,
-        tailAmount = tailIn,
-        instabilityAmount = instabilityIn,
+        dampAmount = dampIn;
+        tailAmount = tailIn;
+        instabilityAmount = instabilityIn;
 
         qAmount = qIn;
 
@@ -109,14 +105,10 @@ public:
         playing = true;
         ending = false;
 
-        // ====== MIDI TO DELAYTIME =======
+        // ====== MIDI TO FREQ =======
         freq = MidiMessage::getMidiNoteInHertz(midiNoteNumber); // Get freq from Midi
 
-        // ====== MIDI TO DELAYTIME =======
-        for (int i = 0; i < 100; i++)
-        {
-            float Impulse = random.nextFloat();
-        }
+        karplusStrong.setDampening(*dampAmount);
 
         env.reset(); // clear out envelope before re-triggering it
         env.noteOn(); // start envelope
@@ -151,13 +143,9 @@ public:
     {
         if (playing) // check to see if this voice should be playing
         {
-            // ====== SMOOTHING Q =======
-            smoothQ.setTargetValue(*qAmount);
-            float smoothedQ = smoothQ.getNextValue();
 
             // ====== SYNTHESISER NOTE SETUP =======
-            subSynth.setFilter(sr, freq + /**beatAmount,*/ *instabilityAmount, smoothedQ);
-            karplusStrong.setDelaytime(freq, /**beatAmount,*/ *instabilityAmount);
+            karplusStrong.setDelaytime(freq, *instabilityAmount);
 
             // ====== FEEDBACK SETUP =======
             feedbacker1.setDelayTimeInSamples(sr / *beatAmount);
@@ -174,6 +162,14 @@ public:
             envParams.release = *release;
             env.setParameters(envParams);
 
+            /*
+            float impulse;
+
+            for (int i = 0; i < 1; i++)
+            {
+                impulse = random.nextFloat();
+            }
+            */
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
             {
@@ -181,42 +177,37 @@ public:
                 
                 // ====== KARPLUS STRONG PARAMERTS =======
                 karplusStrong.setTail(*tailAmount);
-                karplusStrong.setDampening(*dampAmount);
            
                 // ====== WHITE NOISE =======
-                float currentSample = random.nextFloat() * envVal;
+                float noise = random.nextFloat() * envVal;
 
                 // ====== SAMPLE PROCESSING =======
-                currentSample = karplusStrong.process(currentSample + (tanh(feedbacker1.process(karplusStrong.process(currentSample)) * *feedbackAmount))) //Karplus Strong
-                                + (tanh(feedbacker1.process(karplusStrong.process(currentSample))) * *feedbackAmount) // Feedbacked Signal
-                                //+(subSynth.process(currentSample + tanh(feedbacker1.process(karplusStrong.process(currentSample) * *feedbackAmount)) ) * smoothedQ)) //Subtractive Synth with adjusted Volume relative to Q Amount in Filter
-                                * 0.5f        // Half the Volume
-                                * 0.1f        // Output Volume                                     
-                                ;     // Multiply with Envelope
+                float currentSample = noise
+                    //karplusStrong.process(noise) //Karplus Strong + Feedback
+                                //+ (tanh(feedbacker1.process(karplusStrong.process(impulse))) * *feedbackAmount) // Feedbacked Signal
+                                * 0.0f        // Half the Volume
+                                * 0.1f;        // Output Volume        
 
                 // ====== WAVESHAPING LIMITER =======
-                currentSample = tanh(currentSample);
+                //currentSample = tanh(currentSample);
                 
                 //currentSample = limiter.process(currentSample, 0.95f);
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
                 {
-                    outputBuffer.addSample(
-                                          chan, sampleIndex, 
-                                          currentSample 
-                                          ); 
+                    outputBuffer.addSample(chan, sampleIndex, currentSample); 
                 }
 
                 // ====== END SOUND =======
-                /*if (ending)
+                if (ending)
                 {
                     if (envVal < 0.0001f) // Clear note if envelope value is very small
                     {
                         clearCurrentNote();
                         playing = false;
                     }
-                }*/
+                }
             }
                     
         }
@@ -260,18 +251,14 @@ private:
     std::atomic<float>* release;
 
     // ====== FILTER SMOOTHING ======= 
-    SmoothedValue<float, ValueSmoothingTypes::Linear> smoothQ;
+    
 
     Limiter limiter;
 
     BasicDelayLine feedbacker1, feedbacker2;
 
-    // ====== SUBTRACTIVE SYNTH =======   
-    SubtractiveSynth subSynth;
-
     // ====== KARPLUS STRONG =======   
     KarplusStrong karplusStrong;
-
 
     Random random; // for White Noise
 

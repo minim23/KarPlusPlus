@@ -23,23 +23,23 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
 #endif
     ),
 #endif
-    parameters (*this, nullptr, "ParamTreeID", {
+    parameters(*this, nullptr, "ParamTreeID", {
     // Parameter Layout
     // id, description, min val, max val, default val
-    std::make_unique<AudioParameterFloat>("detune", "Detune (Hz)", 0.0f, 20.0f, 2.0f),
+    std::make_unique<AudioParameterFloat>("detune", "Detune (Hz)", 0.0f, 20.0f, 5.0f),
 
-    std::make_unique<AudioParameterFloat>("damp", "Damp", 0.0f, 1.0f, 1.0f),
+    std::make_unique<AudioParameterFloat>("damp", "Damp", 0.0f, 1.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("tail", "Tail", 0.0f, 0.95f, 0.9f),
-    std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 0.0f),
+    std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 10.0f),
 
-    std::make_unique<AudioParameterFloat>("q", "Q", 10.0f, 2000.0f, 20.0f),
+    std::make_unique<AudioParameterFloat>("q", "Q", 1.0f, 10.0f, 2.0f),
 
-    std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.3f, 0.0f),
+    std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.3f, 0.2f),
 
     std::make_unique<AudioParameterFloat>("attack", "Attack", 0.01f, 5.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("decay", "Decay", 0.0f, 0.25f, 0.25f),
-    std::make_unique<AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 0.5f),
-    std::make_unique<AudioParameterFloat>("release", "Release", 0.1f, 5.0f, 1.0f),
+    std::make_unique<AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 0.8f),
+    std::make_unique<AudioParameterFloat>("release", "Release", 0.1f, 5.0f, 5.0f)
         })
 {
     detuneParam = parameters.getRawParameterValue("detune");
