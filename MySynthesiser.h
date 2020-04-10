@@ -14,6 +14,7 @@
 #include "Limiter.h"
 #include "KarplusStrong.h"
 #include "Feedback.h"
+#include "ResonantFeedback.h"
 
 // ===========================
 // ===========================
@@ -52,8 +53,19 @@ public:
         sr = sampleRate;
 
         karplusStrong.setup(sr);
-        feedback.setup(sr);
+        resFeedback.setSize(sr * 10);
+    }
 
+    // ====== SETUP FORMANTS =======
+    void setFormants()
+    {
+        for (int i; i < formantAmount; i++)
+        {
+            float q = random.nextFloat() + 0.01;
+            float freq = random.nextFloat() * 6000 + 20;
+
+            formants[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, freq, q));
+        }
     }
 
     // ====== INITIALIZATE PARAMETER POINTERS =======
@@ -107,6 +119,8 @@ public:
         freq = MidiMessage::getMidiNoteInHertz(midiNoteNumber); // Get freq from Midi
 
         karplusStrong.setDampening(*dampAmount);
+
+        resFeedback.setFeedback(*feedbackAmount);
 
         env.reset(); // clear out envelope before re-triggering it
         env.noteOn(); // start envelope
@@ -176,19 +190,27 @@ public:
                 karplusStrong.setTail(*tailAmount);
 
                 // ====== FEEDBACK =======
-                feedback.setDelaytime(*delayTime);
-                feedback.setFeedback(*feedbackAmount);
-                feedback.setFilter(*loPassAmount, *hiPassAmount);
+                resFeedback.setDelayTimeInSamples(*delayTime * sr);
+                resFeedback.setResonator(sr, freq, 100);
 
                 // ====== IMPULSE =======
                 float exciter = random.nextFloat() * impulseVal;
 
                 // ====== SAMPLE PROCESSING =======
-                float currentSample = karplusStrong.process(exciter + feedback.process(currentSample * *feedbackAmount)) //Karplus Strong + Feedback
-                                      + feedback.process(karplusStrong.process(exciter) * *feedbackAmount)
-                                      * 0.3f        // Half the Volume
-                                      * 0.1f
+                float currentSample = karplusStrong.process(exciter); //Karplus Strong + Feedback
+                      currentSample = currentSample + resFeedback.process(currentSample, 0.001)
+                                      * 5.0f
+                                      //* 0.3f        // Half the Volume
+                                      //* 0.1f
                                       * envVal;        // Output Volume        
+
+                                      /*
+                // ====== FORMANT PROCESSING =======
+                for (int i = 0; i < formantAmount; i++)
+                {
+                    currentSample = formants[i]->processSingleSampleRaw(currentSample);
+                }
+                */
 
                 // ====== WAVESHAPING LIMITER =======
                 //currentSample = tanh(currentSample);                
@@ -259,14 +281,16 @@ private:
 
     Limiter limiter;
 
-    Feedback feedback;
-
     // ====== KARPLUS STRONG =======   
     KarplusStrong karplusStrong;
+
+    OwnedArray<IIRFilter> formants;
+    int formantAmount = 32;
 
     Random random; // for White Noise
 
     BasicDelayLine delay;
+    ResonantFeedback resFeedback;
 
     float freq; // Frequency of Synth
     float sr; // Samplerate

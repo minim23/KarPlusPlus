@@ -53,7 +53,7 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     attackParam = parameters.getRawParameterValue("attack");
     decayParam = parameters.getRawParameterValue("decay");
     sustainParam = parameters.getRawParameterValue("sustain");
-    releaseParam = parameters.getRawParameterValue("release");
+    releaseParam = parameters.getRawParameterValue("release"); 
 
     // Constructor to set up polyphony
     for (int i = 0; i < voiceCount; i++)
@@ -80,6 +80,12 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
             decayParam, 
             sustainParam, 
             releaseParam);
+    }
+
+    for (int i = 0; i < voiceCount; i++)
+    {
+    MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
+    v->setFormants();
     }
 }
 
