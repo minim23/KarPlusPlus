@@ -61,10 +61,7 @@ public:
     {
         for (int i; i < formantAmount; i++)
         {
-            float q = random.nextFloat() + 0.01;
-            float freq = random.nextFloat() * 6000 + 20;
-
-            formants[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, freq, q));
+            formants.add(new IIRFilter()); //SETUP ARRAY OF FILTERS
         }
     }
 
@@ -78,8 +75,10 @@ public:
 
     std::atomic<float>* delayTimeIn,
     std::atomic<float>* feedbackIn,
-    std::atomic<float>* hiPassIn,
-    std::atomic<float>* loPassIn,
+    std::atomic<float>* qIn,
+    std::atomic<float>* noiseIn,
+
+    std::atomic<float>* karplusVolIn,
 
     std::atomic<float>* attackIn,
     std::atomic<float>* decayIn,
@@ -92,8 +91,10 @@ public:
 
         feedbackAmount = feedbackIn;
         delayTime = delayTimeIn;
-        hiPassAmount = hiPassIn;
-        loPassAmount = loPassIn;      
+        qAmount = qIn;
+        noiseAmount = noiseIn;      
+
+        karplusVolAmount = karplusVolIn;
 
         attack = attackIn;
         decay = decayIn;
@@ -120,13 +121,14 @@ public:
 
         karplusStrong.setDampening(*dampAmount);
 
-        resFeedback.setFeedback(*feedbackAmount);
-
         env.reset(); // clear out envelope before re-triggering it
         env.noteOn(); // start envelope
 
-        impulse.reset();
-        impulse.noteOn();
+        impulseEnv.reset();
+        impulseEnv.noteOn();
+
+        feedbackEnv.reset();
+        feedbackEnv.noteOn();
     }
     //--------------------------------------------------------------------------
     /// Called when a MIDI noteOff message is received
@@ -139,7 +141,8 @@ public:
     void stopNote(float /*velocity*/, bool allowTailOff) override
     {
         env.noteOff();
-        impulse.noteOff();
+        impulseEnv.noteOff();
+        feedbackEnv.noteOff();
 
         ending = true;
     }
@@ -165,52 +168,75 @@ public:
             karplusStrong.setDelaytime(freq, *instabilityAmount);
             
             // ====== ENVELOPE SETUP =======
+            // ====== GLOBAL =======
             ADSR::Parameters envParams;
             envParams.attack = *attack;
             envParams.decay = *decay;
             envParams.sustain = *sustain;
-            envParams.release = *release;
+            envParams.release = *release + 5000; // Make sure to end after feedback release
             env.setParameters(envParams);
 
+            // ====== FEEDBACK =======
+            ADSR::Parameters feedbackParams;
+            feedbackParams.attack = *attack + 10; // Make sure to beginn after global start
+            feedbackParams.decay = *decay;
+            feedbackParams.sustain = *sustain - 0.1;
+            feedbackParams.release = *release;
+            feedbackEnv.setParameters(feedbackParams);
+
+            // ====== IMPULSE =======
             ADSR::Parameters impulseParams;
             impulseParams.attack = 0.01f;
             impulseParams.decay = 0.1f;
-            impulseParams.sustain = 0.0f;
-            impulseParams.release = 0.1;
-            impulse.setParameters(impulseParams);
+            impulseParams.sustain = *noiseAmount;
+            impulseParams.release = 0.1 + *noiseAmount;
+            impulseEnv.setParameters(impulseParams);
 
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
-            {                               
+            {   
+                /*
+                for (int i; i < formantAmount; i++)
+                {
+                    float q = random.nextFloat() + 0.01;
+                    float freq = random.nextInt(6000) + 20;
+
+                    formants[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, freq, q));
+                }*/
+                
                 // ====== ENVELOPES =======
-                float envVal = env.getNextSample(); // Envelope Calculation
-                float impulseVal = impulse.getNextSample(); // Impulse Calculation
+                float envVal = env.getNextSample();
+                float impulseVal = impulseEnv.getNextSample();
+                float feedbackVal = feedbackEnv.getNextSample();
                 
                 // ====== KARPLUS STRONG PARAMERTS =======
                 karplusStrong.setTail(*tailAmount);
 
-                // ====== FEEDBACK =======
-                resFeedback.setDelayTimeInSamples(*delayTime * sr);
-                resFeedback.setResonator(sr, freq, 100);
+                // ====== RESONANT FEEDBACK =======
+                resFeedback.setDelayTimeInSamples((*delayTime * sr / 5) + 8000);
+                resFeedback.setResonator(sr, freq, *qAmount);
+                resFeedback.setFeedback(*feedbackAmount * feedbackVal);
 
                 // ====== IMPULSE =======
                 float exciter = random.nextFloat() * impulseVal;
 
                 // ====== SAMPLE PROCESSING =======
-                float currentSample = karplusStrong.process(exciter); //Karplus Strong + Feedback
-                      currentSample = currentSample + resFeedback.process(currentSample, 0.001)
-                                      * 5.0f
-                                      //* 0.3f        // Half the Volume
-                                      //* 0.1f
+                float currentSample = karplusStrong.process(exciter) * *karplusVolAmount
+                                      + (resFeedback.process(karplusStrong.process(exciter), 0.001) * *feedbackAmount)
+                                      * 5.0f        // Half the Volume
                                       * envVal;        // Output Volume        
 
-                                      /*
+                /*
                 // ====== FORMANT PROCESSING =======
                 for (int i = 0; i < formantAmount; i++)
                 {
                     currentSample = formants[i]->processSingleSampleRaw(currentSample);
-                }
-                */
+                }           
+                
+                for (auto* formant : formants)
+                {
+                    formant.process(currentSample);
+                }*/
 
                 // ====== WAVESHAPING LIMITER =======
                 //currentSample = tanh(currentSample);                
@@ -259,17 +285,15 @@ private:
 
     // ====== PARAMETER VALUES ======= 
     std::atomic<float>* delayTime;
-    std::atomic<float>* hiPassAmount;
-    std::atomic<float>* loPassAmount;
+    std::atomic<float>* qAmount;
+    std::atomic<float>* noiseAmount;
     std::atomic<float>* feedbackAmount;
 
     std::atomic<float>* dampAmount;
     std::atomic<float>* tailAmount;
     std::atomic<float>* instabilityAmount;
 
-    std::atomic<float>* qAmount;
-
-
+    std::atomic<float>* karplusVolAmount;
 
     std::atomic<float>* attack;
     std::atomic<float>* decay;
@@ -295,8 +319,11 @@ private:
     float freq; // Frequency of Synth
     float sr; // Samplerate
 
-    ADSR env; // JUCE ADSR Envelope
-    ADSR impulse; // JUCE ADSR Envelope
+    // ENVELOPE SETUP
+    ADSR env;
+    ADSR impulseEnv; 
+    ADSR feedbackEnv;
+
 
         //IIRFilter resonator, detunedResonator;
 };

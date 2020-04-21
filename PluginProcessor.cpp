@@ -32,8 +32,10 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
 
     std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.99f, 0.0f),
     std::make_unique<AudioParameterFloat>("delaytime", "Delaytime", 0.0f, 20.0f, 5.0f),
-    std::make_unique<AudioParameterFloat>("hipass", "HiPass", 20.0f, 2000.0f, 20.0f),
-    std::make_unique<AudioParameterFloat>("lopass", "LoPass", 2000.0f, 16000.0f, 16000.0f),
+    std::make_unique<AudioParameterFloat>("q", "Q", 0.1f, 100.0f, 50.0f),
+    std::make_unique<AudioParameterFloat>("noise", "Noise", 0.0f, 1.0f, 0.0f),
+
+    std::make_unique<AudioParameterFloat>("karplusVol", "Impulse Vol", 0.0f, 1.0f, 0.7f),
 
     std::make_unique<AudioParameterFloat>("attack", "Attack", 0.01f, 5.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("decay", "Decay", 0.0f, 0.25f, 0.25f),
@@ -47,8 +49,10 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
 
     feedbackParam = parameters.getRawParameterValue("feedback");
     delaytimeParam = parameters.getRawParameterValue("delaytime");
-    hiPassParam = parameters.getRawParameterValue("hipass");
-    loPassParam = parameters.getRawParameterValue("lopass");
+    qParam = parameters.getRawParameterValue("q");
+    noiseParam = parameters.getRawParameterValue("noise");
+
+    karplusVolParam = parameters.getRawParameterValue("karplusVol");
 
     attackParam = parameters.getRawParameterValue("attack");
     decayParam = parameters.getRawParameterValue("decay");
@@ -73,8 +77,10 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
 
             feedbackParam,
             delaytimeParam,
-            hiPassParam,
-            loPassParam,
+            qParam,
+            noiseParam,
+
+            karplusVolParam,
             
             attackParam, 
             decayParam, 
@@ -82,6 +88,7 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
             releaseParam);
     }
 
+    // ====== FORMANTS =======
     for (int i = 0; i < voiceCount; i++)
     {
     MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice

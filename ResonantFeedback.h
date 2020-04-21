@@ -29,14 +29,6 @@ public:
         float outVal = readVal();
         
         outVal = resonator.processSingleSampleRaw(input + outVal) * resGain;
-        //outVal = formants.processSingleSampleRaw(outVal);        
-
-        /*
-        for (int i; i < resonatorAmount; i++)
-        {
-            outVal = resonator[i]->processSingleSampleRaw(noise + outVal) * resGain * resonatorAmount;
-        }
-        */
         outVal = tanh(outVal);
 
         writeVal(feedback * outVal);     // note the feedback here, scaling the output back in to the delay
@@ -68,7 +60,9 @@ public:
     /// set the actual delay time in samples
     void setDelayTimeInSamples(float delTime)
     {
-        delayTimeInSamples = delTime;
+        smoothDelaytime.setTargetValue(delTime);
+
+        delayTimeInSamples = smoothDelaytime.getNextValue();
         readPos = writePos - delayTimeInSamples;
         while (readPos < 0)
             readPos += size;
@@ -103,29 +97,33 @@ public:
     void setFormants(int samplerate, float maxFreq)
     {
         sr = samplerate;
-        
-
-
+       
         //formants.setCoefficients(IIRCoefficients::makeBandPass(samplerate, freq, q));
 
     }
 
     void setResonator(int samplerate, float freq, float q)
     {
-        resGain = 1 + (q / 10);
-        
-        resonator.setCoefficients(IIRCoefficients::makeBandPass(samplerate, freq, q + 0.01));
+        // ====== SMOOTHED VALUE SETUP =======
+        smoothDelaytime.reset(samplerate, 0.02f); // Set samplerate and smoothing of 20ms
+        smoothDelaytime.setCurrentAndTargetValue(0.0); // will be overwritten
 
-        /*
-        for (int i; i < resonatorAmount; i++)
-        {
-            resonator[i]->setCoefficients(IIRCoefficients::makeBandPass(samplerate, freq, q + 0.01));
-        }    
-        */
+        smoothQ.reset(samplerate, 0.02f); // Set samplerate and smoothing of 200ms
+        smoothQ.setCurrentAndTargetValue(0.0); // will be overwritten
+        
+        smoothQ.setTargetValue(q);
+        float smoothedQ = smoothQ.getNextValue();
+        
+        // ====== RESONATOR SETUP =======
+        resonator.setCoefficients(IIRCoefficients::makeBandPass(samplerate, freq, smoothedQ + 0.01));
+
+        resGain = 1 + (q / 10); // Define Gainstage to equally increase the Volume with rising Q Value
     }
 
 
 private:
+    
+    // ====== DELAY SPECIFICS =======
     float* buffer;              // the actual buffer - not yet initialised to a size
     int size;                   // buffer size in samples
 
@@ -136,21 +134,18 @@ private:
 
     float feedback = 0.0f;       // how much of the delay line to mix with the input?
 
-    int sr;
-
-    Random random;
-
-
-    //OwnedArray<IIRFilter> resonator;
-
+    // ====== SMOOTHED VALUES =======
+    SmoothedValue<float> smoothDelaytime;
+    SmoothedValue<float> smoothQ;
+    
+    // ====== RESONATOR =======
     IIRFilter resonator;
-
-
-
-    int resonatorAmount = 4;
-
-    Limiter limiter;
+    int resonatorAmount = 1;
 
     float resGain;
 
+    Limiter limiter;
+
+    Random random;
+    int sr;
 };

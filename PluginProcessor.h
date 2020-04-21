@@ -70,8 +70,10 @@ private:
 
     std::atomic<float>* feedbackParam;
     std::atomic<float>* delaytimeParam;
-    std::atomic<float>* hiPassParam;
-    std::atomic<float>* loPassParam;
+    std::atomic<float>* qParam;
+    std::atomic<float>* noiseParam;
+
+    std::atomic<float>* karplusVolParam;
 
     std::atomic<float>* attackParam;
     std::atomic<float>* decayParam;
@@ -80,5 +82,5 @@ private:
 
     // Synthesiser class
     Synthesiser synth;
-    int voiceCount = 24;
+    int voiceCount = 32;
 };
