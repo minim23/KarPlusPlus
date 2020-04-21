@@ -9,38 +9,37 @@
 */
 
 #include <cmath>
-#include "Limiter.h"
 
-/// basic delay line with linear interpolation
 class ResonantFeedback
 {
 public:
 
-    /// Destructor - called when the object is destroyed
+    // ====== DESTRUCTOR =======
     ~ResonantFeedback()
     {
     }
 
-    /// store a value in the delay and retrieve the sample at the current read position
+    // ====== STORE VALUE AND READ CURRENT POSITION =======
     float process(float input, float noiseLevel)
     {
+        // ====== BACKGROUND NOISE =======
         float noise = random.nextFloat() * noiseLevel;
         
+        // ====== PROCESSING =======
         float outVal = readVal();
-        
-        outVal = resonator.processSingleSampleRaw(input + outVal) * resGain;
-        outVal = tanh(outVal);
+        outVal = resonator.processSingleSampleRaw(input + outVal) * resGain; // Multiply resonant filter by gainstage
+        outVal = tanh(outVal); // Limit signal before feedback
 
-        writeVal(feedback * outVal);     // note the feedback here, scaling the output back in to the delay
+        writeVal(feedback * outVal); 
 
-        outVal = tanh(outVal);
+        outVal = tanh(outVal); // Limit output signal after feedback
 
         float floor(outVal); // calculates interpolation
         return floor;
         
     }
 
-    /// read a value from the buffer at the read head position, then increment and wrap the readPos
+    // ====== READ BUFFER =======
     float readVal()
     {
         float outVal = buffer[readPos];
@@ -49,7 +48,7 @@ public:
         return outVal;
     }
 
-    /// write a value to the buffer at the write head position, then increment and wrap the writePos
+    // ====== WRITE INTO BUFFER =======
     void writeVal(float inSamp)
     {
         buffer[writePos] = inSamp;
@@ -57,7 +56,7 @@ public:
         writePos %= size;
     }
 
-    /// set the actual delay time in samples
+    // ====== DELAY TIME =======
     void setDelayTimeInSamples(float delTime)
     {
         smoothDelaytime.setTargetValue(delTime);
@@ -73,7 +72,7 @@ public:
         return delayTimeInSamples;
     }
 
-    /// initialise the float array to a given maximum size (your specified delay time must always be less than this)
+    // ====== SET MAXIMUM SIZE =======
     void setSize(float newSize)
     {
         size = newSize;
@@ -84,6 +83,7 @@ public:
         }
     }
 
+    // ====== SET FEEDBACK =======
     void setFeedback(float fb)
     {
         feedback = fb;
@@ -94,15 +94,8 @@ public:
             feedback = 0.0f;
     }
 
-    void setFormants(int samplerate, float maxFreq)
-    {
-        sr = samplerate;
-       
-        //formants.setCoefficients(IIRCoefficients::makeBandPass(samplerate, freq, q));
-
-    }
-
-    void setResonator(int samplerate, float freq, float q)
+    // ====== SETUP SAMPLERATE AND SMOOTHED VALUES =======
+    void setup(int samplerate)
     {
         // ====== SMOOTHED VALUE SETUP =======
         smoothDelaytime.reset(samplerate, 0.02f); // Set samplerate and smoothing of 20ms
@@ -110,12 +103,18 @@ public:
 
         smoothQ.reset(samplerate, 0.02f); // Set samplerate and smoothing of 200ms
         smoothQ.setCurrentAndTargetValue(0.0); // will be overwritten
-        
+
+        sr = samplerate;
+    }
+
+    // ====== SETUP RESONATOR =======
+    void setResonator(float freq, float q)
+    {   
+        // ====== SMOOTHED Q =======
         smoothQ.setTargetValue(q);
         float smoothedQ = smoothQ.getNextValue();
         
-        // ====== RESONATOR SETUP =======
-        resonator.setCoefficients(IIRCoefficients::makeBandPass(samplerate, freq, smoothedQ + 0.01));
+        resonator.setCoefficients(IIRCoefficients::makeBandPass(sr, freq, smoothedQ + 0.01));
 
         resGain = 1 + (q / 10); // Define Gainstage to equally increase the Volume with rising Q Value
     }
@@ -144,8 +143,7 @@ private:
 
     float resGain;
 
-    Limiter limiter;
-
+    // ====== UTILITY =======
     Random random;
     int sr;
 };

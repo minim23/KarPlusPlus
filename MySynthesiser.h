@@ -53,7 +53,8 @@ public:
         sr = sampleRate;
 
         karplusStrong.setup(sr);
-        resFeedback.setSize(sr * 10);
+        resFeedback.setup(sr);
+        resFeedback.setSize(sr * 30);
     }
 
     // ====== SETUP FORMANTS =======
@@ -188,7 +189,7 @@ public:
             ADSR::Parameters impulseParams;
             impulseParams.attack = 0.01f;
             impulseParams.decay = 0.1f;
-            impulseParams.sustain = *noiseAmount;
+            impulseParams.sustain = 0.0f;
             impulseParams.release = 0.1 + *noiseAmount;
             impulseEnv.setParameters(impulseParams);
 
@@ -209,23 +210,29 @@ public:
                 float impulseVal = impulseEnv.getNextSample();
                 float feedbackVal = feedbackEnv.getNextSample();
                 
+                // ====== IMPULSE =======
+                float exciter = random.nextFloat() * impulseVal;
+                
                 // ====== KARPLUS STRONG PARAMERTS =======
                 karplusStrong.setTail(*tailAmount);
 
                 // ====== RESONANT FEEDBACK =======
-                resFeedback.setDelayTimeInSamples((*delayTime * sr / 5) + 8000);
-                resFeedback.setResonator(sr, freq, *qAmount);
-                resFeedback.setFeedback(*feedbackAmount * feedbackVal);
-
-                // ====== IMPULSE =======
-                float exciter = random.nextFloat() * impulseVal;
+                resFeedback.setDelayTimeInSamples(*delayTime * (sr/10) + 8000);
+                resFeedback.setResonator(freq, *qAmount);
+                resFeedback.setFeedback(*feedbackAmount * feedbackVal); // Trigger feedback by custom ASDR
 
                 // ====== SAMPLE PROCESSING =======
                 float currentSample = karplusStrong.process(exciter) * *karplusVolAmount
-                                      + (resFeedback.process(karplusStrong.process(exciter), 0.001) * *feedbackAmount)
-                                      * 5.0f        // Half the Volume
-                                      * envVal;        // Output Volume        
+                                      + (resFeedback.process(karplusStrong.process(exciter), 0) * *feedbackAmount)
+                                      * 0.3f            // Lower the volume
+                                      * envVal;         // Multiply by global envelope 
 
+                /*
+                for (auto* formant : formants)
+                {
+                    formant.process(currentSample);
+                }
+                */
                 /*
                 // ====== FORMANT PROCESSING =======
                 for (int i = 0; i < formantAmount; i++)
@@ -233,13 +240,9 @@ public:
                     currentSample = formants[i]->processSingleSampleRaw(currentSample);
                 }           
                 
-                for (auto* formant : formants)
-                {
-                    formant.process(currentSample);
-                }*/
+                */
 
-                // ====== WAVESHAPING LIMITER =======
-                //currentSample = tanh(currentSample);                
+                // ====== LIMIT OUTPUT =======          
                 currentSample = limiter.process(currentSample, 0.95f);
                                 
                 // ====== CHANNEL ASSIGNMENT =======
