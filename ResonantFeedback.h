@@ -62,6 +62,7 @@ public:
         smoothDelaytime.setTargetValue(delTime);
 
         delayTimeInSamples = smoothDelaytime.getNextValue();
+
         readPos = writePos - delayTimeInSamples;
         while (readPos < 0)
             readPos += size;

@@ -14,6 +14,12 @@
 class KarplusStrong
 {
 public:
+
+    // ====== DESTRUCTOR =======
+    ~KarplusStrong()
+    {
+    }
+
    void setup(int sampleRate)
     {
         sr = sampleRate; // Store samplerate for delaytime values

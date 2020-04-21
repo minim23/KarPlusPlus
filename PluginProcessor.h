@@ -66,7 +66,7 @@ private:
     std::atomic<float>* tailParam;
     std::atomic<float>* instabilityParam;
 
-    //std::atomic<float>* qParam;
+    std::atomic<float>* detuneParam;
 
     std::atomic<float>* feedbackParam;
     std::atomic<float>* delaytimeParam;
@@ -82,5 +82,5 @@ private:
 
     // Synthesiser class
     Synthesiser synth;
-    int voiceCount = 12;
+    int voiceCount = 24;
 };

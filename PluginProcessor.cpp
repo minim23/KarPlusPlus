@@ -30,10 +30,12 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     std::make_unique<AudioParameterFloat>("tail", "Tail", 0.0f, 0.99f, 0.9f),
     std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 0.0f),
 
-    std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 0.99f, 0.0f),
+    std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 1.0f, 0.0f),
     std::make_unique<AudioParameterFloat>("delaytime", "Delaytime", 0.0f, 20.0f, 5.0f),
     std::make_unique<AudioParameterFloat>("q", "Q", 0.1f, 100.0f, 50.0f),
-    std::make_unique<AudioParameterFloat>("noise", "Noise", 0.0f, 1.0f, 0.0f),
+    std::make_unique<AudioParameterFloat>("noise", "Feedback Colour", 0.0f, 1.0f, 0.0f),
+
+    std::make_unique<AudioParameterFloat>("detune", "Detune", 0.0f, 20.0f, 0.0f),
 
     std::make_unique<AudioParameterFloat>("karplusVol", "Impulse Vol", 0.0f, 1.0f, 0.7f),
 
@@ -51,6 +53,8 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     delaytimeParam = parameters.getRawParameterValue("delaytime");
     qParam = parameters.getRawParameterValue("q");
     noiseParam = parameters.getRawParameterValue("noise");
+
+    detuneParam = parameters.getRawParameterValue("detune");
 
     karplusVolParam = parameters.getRawParameterValue("karplusVol");
 
@@ -79,6 +83,8 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
             delaytimeParam,
             qParam,
             noiseParam,
+
+            detuneParam,
 
             karplusVolParam,
             
