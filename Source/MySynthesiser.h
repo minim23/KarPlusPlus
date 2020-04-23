@@ -68,6 +68,15 @@ public:
         {
             formants.add(new IIRFilter());
         }
+
+        // ====== RANDOMIZE FORMANTS =======
+        for (int i; i < formantAmount; i++)
+        {
+            float formantQ = random.nextFloat() + 0.01;
+            float formantFreq = random.nextInt(6000) + 20;
+
+            formants[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, formantFreq, formantQ));
+        }
     }
 
     // ====== INITIALIZATE PARAMETER POINTERS =======
@@ -139,6 +148,7 @@ public:
 
         feedbackEnv.reset();
         feedbackEnv.noteOn();
+
     }
     //--------------------------------------------------------------------------
     /// Called when a MIDI noteOff message is received
@@ -200,16 +210,7 @@ public:
 
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
-            {   
-                // ====== RANDOMIZE FORMANTS =======
-                for (int i; i < formantAmount; i++)
-                {
-                    float formantQ = random.nextFloat() + 0.01;
-                    float formantFreq = random.nextInt(6000) + 20;
-
-                    formants[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, formantFreq, formantQ));
-                }
-                
+            {                   
                 // ====== ENVELOPES =======
                 float envVal = env.getNextSample();
                 float impulseVal = impulseEnv.getNextSample();
@@ -229,11 +230,13 @@ public:
                 float old1 = *noiseAmount * random.nextInt(10000);
                 float old2 = *noiseAmount * random.nextInt(10000);
 
-                resFeedbackLeft.setDelayTimeInSamples(*delayTime * (sr/10) + 100 + old1);
+                //float delayt = *delayTime * (sr / 10) + 100;
+
+                resFeedbackLeft.setDelayTimeInSamples(*delayTime * (sr / 10) + 100 + old1);
                 resFeedbackLeft.setResonator(freq, *qAmount);
                 resFeedbackLeft.setFeedback(*feedbackAmount * feedbackVal); // Trigger feedback by custom ASDR
 
-                resFeedbackRight.setDelayTimeInSamples(*delayTime * (sr / 10) + 8000 + old2);
+                resFeedbackRight.setDelayTimeInSamples(*delayTime * (sr/10) + 100 + old2);
                 resFeedbackRight.setResonator(freq + *detuneAmount, *qAmount);
                 resFeedbackRight.setFeedback(*feedbackAmount * feedbackVal); // Trigger feedback by custom ASDR
 
@@ -249,20 +252,15 @@ public:
                                     + (resFeedbackRight.process(karplusStrongRight.process(exciterRight), 0) * *feedbackAmount)
                                     * gain;            
 
-                /*
-                // ====== FORMANT PROCESSING =======
-                for (int i = 0; i < formantAmount; i++)
-                {
-                    currentSampleLeft = formants[i]->processSingleSampleRaw(currentSampleLeft);
-                }
-                */
 
-                /*
+                // ====== FORMANT PROCESSING =======
+                
                 for (auto* formant : formants)
                 {
-                    formant->process(currentSampleLeft);
+                    formant->processSingleSampleRaw(currentSampleLeft);
+                    formant->processSingleSampleRaw(currentSampleRight);
                 }
-                */
+                
 
                 // ====== GLOBAL ENVELOPE =======
                 currentSampleLeft = currentSampleLeft * envVal;

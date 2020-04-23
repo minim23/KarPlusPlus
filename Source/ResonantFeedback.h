@@ -89,8 +89,8 @@ public:
     {
         feedback = fb;
         // check we're not going to get crazy positive feedback:
-        if (feedback > 1)
-            feedback = 1.0f;
+        if (feedback > 10)
+            feedback = 10.0f;
         if (feedback < 0)
             feedback = 0.0f;
     }
