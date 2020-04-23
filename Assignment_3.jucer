@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="mfC8Ya" name="Assignment_3" projectType="audioplug" jucerVersion="5.4.7">
+<JUCERPROJECT id="mfC8Ya" name="Assignment_3" projectType="audioplug" jucerVersion="5.4.6">
   <MAINGROUP id="qQt5i4" name="Assignment_3">
     <GROUP id="{3BCDDF86-D967-72F5-2EE0-3721B97AF773}" name="Source">
       <FILE id="w8U1HZ" name="MySynthesiser.h" compile="0" resource="0" file="Source/MySynthesiser.h"/>

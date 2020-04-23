@@ -78,8 +78,8 @@ public:
     std::atomic<float>* tailIn,
     std::atomic<float>* instabilityIn,
 
-    std::atomic<float>* delayTimeIn,
     std::atomic<float>* feedbackIn,
+    std::atomic<float>* delayTimeIn,
     std::atomic<float>* qIn,
     std::atomic<float>* noiseIn,
 
@@ -184,7 +184,7 @@ public:
 
             // ====== FEEDBACK =======
             ADSR::Parameters feedbackParams;
-            feedbackParams.attack = *attack + 0.1; // Make sure to beginn after global start
+            feedbackParams.attack = *attack; // Make sure to beginn after global start
             feedbackParams.decay = *decay;
             feedbackParams.sustain = *sustain - 0.1;
             feedbackParams.release = *release;
@@ -229,7 +229,7 @@ public:
                 float old1 = *noiseAmount * random.nextInt(10000);
                 float old2 = *noiseAmount * random.nextInt(10000);
 
-                resFeedbackLeft.setDelayTimeInSamples(*delayTime * (sr/10) + 8000 + old1);
+                resFeedbackLeft.setDelayTimeInSamples(*delayTime * (sr/10) + 100 + old1);
                 resFeedbackLeft.setResonator(freq, *qAmount);
                 resFeedbackLeft.setFeedback(*feedbackAmount * feedbackVal); // Trigger feedback by custom ASDR
 
@@ -260,7 +260,7 @@ public:
                 /*
                 for (auto* formant : formants)
                 {
-                    formant.process(currentSampleLeft);
+                    formant->process(currentSampleLeft);
                 }
                 */
 
