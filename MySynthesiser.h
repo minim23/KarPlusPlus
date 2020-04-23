@@ -66,7 +66,7 @@ public:
     {
         for (int i; i < formantAmount; i++)
         {
-            formants.add(new IIRFilter()); //SETUP ARRAY OF FILTERS
+            formants.add(new IIRFilter());
         }
     }
 
@@ -201,7 +201,7 @@ public:
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
             {   
-                
+                // ====== RANDOMIZE FORMANTS =======
                 for (int i; i < formantAmount; i++)
                 {
                     float formantQ = random.nextFloat() + 0.01;
@@ -253,14 +253,14 @@ public:
                 // ====== FORMANT PROCESSING =======
                 for (int i = 0; i < formantAmount; i++)
                 {
-                    currentSample = formants[i]->processSingleSampleRaw(currentSample);
+                    currentSampleLeft = formants[i]->processSingleSampleRaw(currentSampleLeft);
                 }
                 */
 
                 /*
                 for (auto* formant : formants)
                 {
-                    formant.process(currentSample);
+                    formant.process(currentSampleLeft);
                 }
                 */
 
