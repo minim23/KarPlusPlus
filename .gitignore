@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# macOS nonsense
+.DS_Store
+
+# JUCE files
+
+JuceLibraryCode/
+Builds/
