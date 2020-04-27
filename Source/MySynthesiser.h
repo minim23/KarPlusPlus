@@ -33,63 +33,6 @@ class MySynthVoice : public SynthesiserVoice
 public:
     MySynthVoice() {}
 
-    // ====== SETUP FORMANTS =======
-    void setFormants()
-    {
-        /*
-        for (int i; i < formantAmount; i++)
-        {
-            formants1.add(new IIRFilter());
-            //formants2.add(new IIRFilter());
-            //impulseColour.add(new IIRFilter());
-        }
-        */
-    }
-    
-    // ====== SAMPLERATE SETUP FOR PREPARE TO PLAY =======
-    void init(int sampleRate)
-    {
-        sr = sampleRate;
-
-        // ====== KARPLUS STRONG SETUP =======
-        karplusStrongLeft.setSamplerate(sr);
-        karplusStrongRight.setSamplerate(sr);
-        karplusStrongLeft.setSize(sr * 10);
-        karplusStrongRight.setSize(sr * 10);
-
-        smoothKarplusVol.reset(sr, 0.2f); // Set samplerate and smoothing of 200ms
-        smoothKarplusVol.setCurrentAndTargetValue(0.0); // will be overwritten
-
-        // ====== RESONANT FEEDBACK SETUP =======
-        resFeedbackLeft.setSamplerate(sr);
-        resFeedbackLeft.resonatorSetup();
-        resFeedbackLeft.setSize(sr * 30);
-
-        resFeedbackRight.setSamplerate(sr);
-        resFeedbackRight.resonatorSetup();
-        resFeedbackRight.setSize(sr * 30);
-
-        smoothFeedbackVol.reset(sr, 0.2f); // Set samplerate and smoothing of 200ms
-        smoothFeedbackVol.setCurrentAndTargetValue(0.0); // will be overwritten
-
-        /*
-        for (int i = 0; i < formantAmount; i++)
-        {
-            float formantQ1 = random.nextFloat() + 0.01 * 100;
-            //formantQ2 = random.nextFloat() + 0.01;
-            //impulseColourQ = random.nextFloat() + 0.01;
-
-            float formantFreq1 = random.nextInt(1000) + 20;
-            //formantFreq2 = random.nextInt(*attack) + 20;
-            //impulseFreq = random.nextInt(*decay) + 20;
-
-            formants1[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, formantFreq1, formantQ1));
-            //formants2[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, formantFreq2, formantQ2));
-            //impulseColour[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, impulseFreq, impulseColourQ));
-        }
-        */
-    }
-
     // ====== INITIALIZATE PARAMETER POINTERS =======
     void setParameterPointers(
 
@@ -126,6 +69,49 @@ public:
         decay = decayIn;
         sustain = sustainIn;
         release = releaseIn;
+    }
+
+    // ====== SETUP FORMANTS =======
+    void setFormants()
+    {
+        for (int i; i < formantAmount; i++)
+        {
+            formants.add(new IIRFilter());
+
+        
+        }
+    }
+
+    // ====== SAMPLERATE SETUP FOR PREPARE TO PLAY =======
+    void init(int sampleRate)
+    {
+        sr = sampleRate;
+
+        // ====== KARPLUS STRONG SETUP =======
+        karplusStrongLeft.setSamplerate(sr);
+        karplusStrongRight.setSamplerate(sr);
+        karplusStrongLeft.setSize(sr * 10);
+        karplusStrongRight.setSize(sr * 10);
+
+        smoothKarplusVol.reset(sr, 0.2f); // Set samplerate and smoothing of 200ms
+        smoothKarplusVol.setCurrentAndTargetValue(0.0); // will be overwritten
+
+        // ====== RESONANT FEEDBACK SETUP =======
+        resFeedbackLeft.setSamplerate(sr);
+        resFeedbackLeft.resonatorSetup();
+        resFeedbackLeft.setSize(sr * 30);
+
+        resFeedbackRight.setSamplerate(sr);
+        resFeedbackRight.resonatorSetup();
+        resFeedbackRight.setSize(sr * 30);
+
+        smoothFeedbackVol.reset(sr, 0.2f); // Set samplerate and smoothing of 200ms
+        smoothFeedbackVol.setCurrentAndTargetValue(0.0); // will be overwritten
+
+        for (int i = 0; i < formantAmount; i++)
+        {
+        formants[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, random.nextInt(6000) + 20, random.nextFloat() + 0.01 * 100));
+        }
     }
     
     //--------------------------------------------------------------------------
@@ -228,6 +214,13 @@ public:
                
                 // ====== IMPULSE =======
                 float exciter = random.nextFloat() * impulseVal;
+
+                // ====== FORMANT PROCESSING =======
+                /*for (auto* formant : formants)
+                {
+                    formant->processSingleSampleRaw(exciter);
+                    formant->processSingleSampleRaw(exciter);
+                }*/
                 
                 // ====== KARPLUS STRONG =======
                 karplusStrongLeft.setPitch(freq, *instabilityAmount);
@@ -271,26 +264,6 @@ public:
                                     
                                     * gain;    
                 currentSampleRight = currentSampleRight + (resFeedbackRight.process(currentSampleLeft) * *decay);
-
-
-                // ====== FORMANTS =======
-                /*
-                for (int i; i < formantAmount; i++)
-                {
-                    formants1[i]->processSingleSampleRaw(currentSampleLeft);
-                }
-                
-                
-                for (auto* formant : formants1)
-                {
-                    formant->processSingleSampleRaw(currentSampleLeft); 
-                }
-
-                
-                for (auto* formant : formants2)
-                {
-                    formant->processSingleSampleRaw(currentSampleRight);
-                }*/
 
                 // ====== GLOBAL ENVELOPE =======
                 currentSampleLeft = currentSampleLeft * envVal;
@@ -367,8 +340,8 @@ private:
     ResonantFeedback resFeedbackLeft, resFeedbackRight;
 
     // ====== FORMANTS =======   
-    OwnedArray<IIRFilter> formants1;
-    int formantAmount = 32;
+    OwnedArray<IIRFilter> formants;
+    int formantAmount = 4;
 
     // ====== GLOBAL VOLUME =======   
     Limiter limiter;

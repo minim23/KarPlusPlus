@@ -57,8 +57,8 @@ public:
         float smoothedFeedback = smoothFeedback.getNextValue();
         feedback = smoothedFeedback;
 
-        if (feedback > 1)
-            feedback = 1.0f;
+        if (feedback > 10)
+            feedback = 10.0f;
         if (feedback < 0)
             feedback = 0.0f;
     }
