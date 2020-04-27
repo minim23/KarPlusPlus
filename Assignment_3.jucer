@@ -6,17 +6,13 @@
       <FILE id="w8U1HZ" name="MySynthesiser.h" compile="0" resource="0" file="Source/MySynthesiser.h"/>
       <FILE id="vOurps" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
-      <FILE id="JcTb4s" name="BasicDelayLine.h" compile="0" resource="0"
-            file="Source/BasicDelayLine.h"/>
-      <FILE id="DuT93b" name="KarplusStrong.h" compile="0" resource="0" file="Source/KarplusStrong.h"/>
       <FILE id="WznQD6" name="Limiter.h" compile="0" resource="0" file="Source/Limiter.h"/>
       <FILE id="YEukWY" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
       <FILE id="ctYH3d" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
-      <FILE id="e5OC3V" name="ResonantFeedback.h" compile="0" resource="0"
-            file="Source/ResonantFeedback.h"/>
       <FILE id="XXNviG" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="sjuHDx" name="FeedbackDelay.h" compile="0" resource="0" file="Source/FeedbackDelay.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

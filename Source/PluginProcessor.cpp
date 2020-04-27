@@ -38,8 +38,8 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
 
     std::make_unique<AudioParameterFloat>("detune", "Detune", 0.0f, 20.0f, 0.0f),
 
-    std::make_unique<AudioParameterFloat>("attack", "Attack", 100.00f, 6000.0f, 500.0f),
-    std::make_unique<AudioParameterFloat>("decay", "Decay", 20.00f, 10000.0f, 500.0f),
+    std::make_unique<AudioParameterFloat>("attack", "Formants", 100.00f, 6000.0f, 500.0f),
+    std::make_unique<AudioParameterFloat>("decay", "Craziness", 00.00f, 1.0f, 0.0f),
     std::make_unique<AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 0.8f),
     std::make_unique<AudioParameterFloat>("release", "Release", 0.5f, 10.0f, 5.0f)
         })

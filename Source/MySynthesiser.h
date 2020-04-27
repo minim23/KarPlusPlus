@@ -1,18 +1,6 @@
-/*
-  ==============================================================================
-
-    MySynthesiser.h
-    Created: 7 Mar 2020 4:27:57pm
-    Author:  Tom Mudd
-
-  ==============================================================================
-*/
-
 #pragma once
-#include "BasicDelayLine.h"
+#include "FeedbackDelay.h"
 #include "Limiter.h"
-#include "KarplusStrong.h"
-#include "ResonantFeedback.h"
 
 // ===========================
 // ===========================
@@ -58,23 +46,27 @@ public:
         */
     }
     
-    // ====== PREPARE TO PLAY =======
+    // ====== SAMPLERATE SETUP FOR PREPARE TO PLAY =======
     void init(int sampleRate)
     {
         sr = sampleRate;
 
-        // ====== KARPLUS STRONG =======
-        karplusStrongLeft.setup(sr);
-        karplusStrongRight.setup(sr);
+        // ====== KARPLUS STRONG SETUP =======
+        karplusStrongLeft.setSamplerate(sr);
+        karplusStrongRight.setSamplerate(sr);
+        karplusStrongLeft.setSize(sr * 10);
+        karplusStrongRight.setSize(sr * 10);
 
         smoothKarplusVol.reset(sr, 0.2f); // Set samplerate and smoothing of 200ms
         smoothKarplusVol.setCurrentAndTargetValue(0.0); // will be overwritten
 
-        // ====== RESONANT FEEDBACK =======
-        resFeedbackLeft.setup(sr);
+        // ====== RESONANT FEEDBACK SETUP =======
+        resFeedbackLeft.setSamplerate(sr);
+        resFeedbackLeft.resonatorSetup();
         resFeedbackLeft.setSize(sr * 30);
 
-        resFeedbackRight.setup(sr);
+        resFeedbackRight.setSamplerate(sr);
+        resFeedbackRight.resonatorSetup();
         resFeedbackRight.setSize(sr * 30);
 
         smoothFeedbackVol.reset(sr, 0.2f); // Set samplerate and smoothing of 200ms
@@ -222,7 +214,7 @@ public:
             ADSR::Parameters impulseParams;
             impulseParams.attack = 0.01f;
             impulseParams.decay = 0.1f;
-            impulseParams.sustain = 0.1f;
+            impulseParams.sustain = *sustain * 0.3;
             impulseParams.release = 0.1;
             impulseEnv.setParameters(impulseParams);
 
@@ -238,38 +230,47 @@ public:
                 float exciter = random.nextFloat() * impulseVal;
                 
                 // ====== KARPLUS STRONG =======
-                smoothKarplusVol.setTargetValue(*karplusVolAmount);
-                float smoothedKarplusVol = smoothKarplusVol.getNextValue();
+                karplusStrongLeft.setPitch(freq, *instabilityAmount);
+                karplusStrongRight.setPitch(freq + *detuneAmount, *instabilityAmount);
 
-                karplusStrongLeft.setDelaytime(freq, *instabilityAmount);
-                karplusStrongRight.setDelaytime(freq + *detuneAmount, *instabilityAmount);
-                karplusStrongLeft.setTail(*tailAmount);
-                karplusStrongRight.setTail(*tailAmount);
+                karplusStrongLeft.setFeedback(*tailAmount);
+                karplusStrongRight.setFeedback(*tailAmount);
 
-                // ====== RESONANT FEEDBACK =======
-                //float age = 1 - (*noiseAmount * random.nextFloat() * 20);
+                // ====== RESONANT FEEDBACK =======              
+                float age = 1 - (*noiseAmount * random.nextFloat()); // Feedback Colour
+                float delayt = (*delayTime * (sr / 20)) * age; // Delaytime
 
-                smoothFeedbackVol.setTargetValue(*feedbackAmount);
-                float smoothedFeedbackVol = smoothFeedbackVol.getNextValue();
-
-                float delayt = (*delayTime * (sr / 10) + 100);
-
-                resFeedbackLeft.setDelayTimeInSamples(delayt);
+                resFeedbackLeft.setDelayTimeInSamples(delayt + 100);
                 resFeedbackLeft.setResonator(freq, *qAmount);
                 resFeedbackLeft.setFeedback(*feedbackAmount * feedbackVal);
 
-                resFeedbackRight.setDelayTimeInSamples(delayt + 100);
+                resFeedbackRight.setDelayTimeInSamples(delayt + 200);
                 resFeedbackRight.setResonator(freq + *detuneAmount, *qAmount);
                 resFeedbackRight.setFeedback(*feedbackAmount * feedbackVal);
+
+                // ====== SMOOTH VOLUME =======
+                smoothFeedbackVol.setTargetValue(*feedbackAmount);
+                float smoothedFeedbackVol = smoothFeedbackVol.getNextValue();
+
+                smoothKarplusVol.setTargetValue(*karplusVolAmount);
+                float smoothedKarplusVol = smoothKarplusVol.getNextValue();
                 
                 // ====== SAMPLE PROCESSING =======
-                float currentSampleLeft = karplusStrongLeft.process(exciter) * smoothedKarplusVol
-                                    + (resFeedbackLeft.process(karplusStrongLeft.process(exciter)) * smoothedFeedbackVol)
-                                    * gain;            
+                float currentSampleLeft = 0.0f;
+                float currentSampleRight = 0.0f;
+                
+                currentSampleLeft = karplusStrongLeft.kSProcess(exciter) * smoothedKarplusVol
+                                    + (resFeedbackLeft.process(karplusStrongLeft.process(exciter)) * smoothedFeedbackVol)   
+                                    
+                                    * gain;  
+                currentSampleLeft = currentSampleLeft + (resFeedbackLeft.process(currentSampleRight) * *decay);
+                
 
-                float currentSampleRight = karplusStrongRight.process(exciter) * smoothedKarplusVol
+                currentSampleRight = karplusStrongRight.kSProcess(exciter) * smoothedKarplusVol
                                     + (resFeedbackRight.process(karplusStrongRight.process(exciter)) * smoothedFeedbackVol)
-                                    * gain;            
+                                    
+                                    * gain;    
+                currentSampleRight = currentSampleRight + (resFeedbackRight.process(currentSampleLeft) * *decay);
 
 
                 // ====== FORMANTS =======
@@ -325,12 +326,6 @@ public:
     //--------------------------------------------------------------------------
     void controllerMoved(int, int) override {}
     //--------------------------------------------------------------------------
-    /**
-     Can this voice play a sound. I wouldn't worry about this for the time being
-
-     @param sound a juce::SynthesiserSound* base class pointer
-     @return sound cast as a pointer to an instance of MySynthSound
-     */
     bool canPlaySound(SynthesiserSound* sound) override
     {
         return dynamic_cast<MySynthSound*> (sound) != nullptr;
