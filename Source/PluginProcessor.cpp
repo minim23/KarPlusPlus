@@ -26,25 +26,26 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     parameters(*this, nullptr, "ParamTreeID", {
     // Parameter Layout
     // id, description, min val, max val, default val
+    std::make_unique<AudioParameterFloat>("karplusVol", "Karplus Vol", 0.0f, 1.0f, 0.7f),
     std::make_unique<AudioParameterFloat>("damp", "Damp", 0.0f, 1.0f, 0.5f),
     std::make_unique<AudioParameterFloat>("tail", "Tail", 0.0f, 0.99f, 0.9f),
     std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 0.0f),
 
-    std::make_unique<AudioParameterFloat>("feedback", "Feedback", 0.0f, 10.0f, 0.0f),
+    std::make_unique<AudioParameterFloat>("feedback", "Feedback Vol", 0.0f, 10.0f, 0.0f),
     std::make_unique<AudioParameterFloat>("delaytime", "Delaytime", 0.0f, 20.0f, 5.0f),
     std::make_unique<AudioParameterFloat>("q", "Q", 0.1f, 100.0f, 50.0f),
     std::make_unique<AudioParameterFloat>("noise", "Feedback Colour", 0.0f, 1.0f, 0.0f),
 
     std::make_unique<AudioParameterFloat>("detune", "Detune", 0.0f, 20.0f, 0.0f),
 
-    std::make_unique<AudioParameterFloat>("karplusVol", "Impulse Vol", 0.0f, 1.0f, 0.7f),
-
-    std::make_unique<AudioParameterFloat>("attack", "Attack", 0.01f, 5.0f, 0.5f),
-    std::make_unique<AudioParameterFloat>("decay", "Decay", 0.0f, 0.25f, 0.25f),
+    std::make_unique<AudioParameterFloat>("attack", "Attack", 100.00f, 6000.0f, 500.0f),
+    std::make_unique<AudioParameterFloat>("decay", "Decay", 20.00f, 10000.0f, 500.0f),
     std::make_unique<AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 0.8f),
-    std::make_unique<AudioParameterFloat>("release", "Release", 0.5f, 5.0f, 5.0f)
+    std::make_unique<AudioParameterFloat>("release", "Release", 0.5f, 10.0f, 5.0f)
         })
 {
+
+    karplusVolParam = parameters.getRawParameterValue("karplusVol");
     dampParam = parameters.getRawParameterValue("damp");
     tailParam = parameters.getRawParameterValue("tail");
     instabilityParam = parameters.getRawParameterValue("instability");
@@ -55,8 +56,6 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     noiseParam = parameters.getRawParameterValue("noise");
 
     detuneParam = parameters.getRawParameterValue("detune");
-
-    karplusVolParam = parameters.getRawParameterValue("karplusVol");
 
     attackParam = parameters.getRawParameterValue("attack");
     decayParam = parameters.getRawParameterValue("decay");
@@ -75,6 +74,7 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     {
         MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
         v->setParameterPointers(
+            karplusVolParam,
             dampParam,
             tailParam,
             instabilityParam,
@@ -85,8 +85,6 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
             noiseParam,
 
             detuneParam,
-
-            karplusVolParam,
             
             attackParam, 
             decayParam, 

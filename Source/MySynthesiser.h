@@ -9,11 +9,9 @@
 */
 
 #pragma once
-#include "Oscillators.h"
 #include "BasicDelayLine.h"
 #include "Limiter.h"
 #include "KarplusStrong.h"
-#include "Feedback.h"
 #include "ResonantFeedback.h"
 
 // ===========================
@@ -47,42 +45,63 @@ class MySynthVoice : public SynthesiserVoice
 public:
     MySynthVoice() {}
 
-    // ====== INITIALIZATION FOR PREPARE TO PLAY =======
+    // ====== SETUP FORMANTS =======
+    void setFormants()
+    {
+        /*
+        for (int i; i < formantAmount; i++)
+        {
+            formants1.add(new IIRFilter());
+            //formants2.add(new IIRFilter());
+            //impulseColour.add(new IIRFilter());
+        }
+        */
+    }
+    
+    // ====== PREPARE TO PLAY =======
     void init(int sampleRate)
     {
         sr = sampleRate;
 
+        // ====== KARPLUS STRONG =======
         karplusStrongLeft.setup(sr);
         karplusStrongRight.setup(sr);
+
+        smoothKarplusVol.reset(sr, 0.2f); // Set samplerate and smoothing of 200ms
+        smoothKarplusVol.setCurrentAndTargetValue(0.0); // will be overwritten
+
+        // ====== RESONANT FEEDBACK =======
         resFeedbackLeft.setup(sr);
         resFeedbackLeft.setSize(sr * 30);
 
         resFeedbackRight.setup(sr);
         resFeedbackRight.setSize(sr * 30);
-    }
 
-    // ====== SETUP FORMANTS =======
-    void setFormants()
-    {
-        for (int i; i < formantAmount; i++)
+        smoothFeedbackVol.reset(sr, 0.2f); // Set samplerate and smoothing of 200ms
+        smoothFeedbackVol.setCurrentAndTargetValue(0.0); // will be overwritten
+
+        /*
+        for (int i = 0; i < formantAmount; i++)
         {
-            formants.add(new IIRFilter());
-        }
+            float formantQ1 = random.nextFloat() + 0.01 * 100;
+            //formantQ2 = random.nextFloat() + 0.01;
+            //impulseColourQ = random.nextFloat() + 0.01;
 
-        // ====== RANDOMIZE FORMANTS =======
-        for (int i; i < formantAmount; i++)
-        {
-            float formantQ = random.nextFloat() + 0.01;
-            float formantFreq = random.nextInt(6000) + 20;
+            float formantFreq1 = random.nextInt(1000) + 20;
+            //formantFreq2 = random.nextInt(*attack) + 20;
+            //impulseFreq = random.nextInt(*decay) + 20;
 
-            formants[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, formantFreq, formantQ));
+            formants1[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, formantFreq1, formantQ1));
+            //formants2[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, formantFreq2, formantQ2));
+            //impulseColour[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, impulseFreq, impulseColourQ));
         }
+        */
     }
 
     // ====== INITIALIZATE PARAMETER POINTERS =======
     void setParameterPointers(
 
-
+        std::atomic<float>* karplusVolIn,
     std::atomic<float>* dampIn,
     std::atomic<float>* tailIn,
     std::atomic<float>* instabilityIn,
@@ -94,13 +113,12 @@ public:
 
     std::atomic<float>* detuneIn,
 
-    std::atomic<float>* karplusVolIn,
-
     std::atomic<float>* attackIn,
     std::atomic<float>* decayIn,
     std::atomic<float>* sustainIn,
     std::atomic<float>* releaseIn)
     {
+        karplusVolAmount = karplusVolIn;
         dampAmount = dampIn;
         tailAmount = tailIn;
         instabilityAmount = instabilityIn;
@@ -111,8 +129,6 @@ public:
         noiseAmount = noiseIn;    
 
         detuneAmount = detuneIn;
-
-        karplusVolAmount = karplusVolIn;
 
         attack = attackIn;
         decay = decayIn;
@@ -137,9 +153,11 @@ public:
         // ====== MIDI TO FREQ =======
         freq = MidiMessage::getMidiNoteInHertz(midiNoteNumber); // Get freq from Midi
 
+        // ====== DAMPENING =======
         karplusStrongLeft.setDampening(*dampAmount);
         karplusStrongRight.setDampening(*dampAmount);
 
+        // ====== ENVELOPE RESET =======
         env.reset(); // clear out envelope before re-triggering it
         env.noteOn(); // start envelope
 
@@ -186,17 +204,17 @@ public:
             // ====== ENVELOPE SETUP =======
             // ====== GLOBAL =======
             ADSR::Parameters envParams;
-            envParams.attack = *attack;
-            envParams.decay = *decay;
-            envParams.sustain = *sustain;
-            envParams.release = *release + 0.5; // Make sure to end after feedback release
+            envParams.attack = 0.1;
+            envParams.decay = 0.25;
+            envParams.sustain = 1.0f;
+            envParams.release = *release + 1.0; // Make sure to end after feedback release
             env.setParameters(envParams);
 
             // ====== FEEDBACK =======
             ADSR::Parameters feedbackParams;
-            feedbackParams.attack = *attack; // Make sure to beginn after global start
-            feedbackParams.decay = *decay;
-            feedbackParams.sustain = *sustain - 0.1;
+            feedbackParams.attack = 0.1;
+            feedbackParams.decay = 0.25;
+            feedbackParams.sustain = 0.9f;
             feedbackParams.release = *release;
             feedbackEnv.setParameters(feedbackParams);
 
@@ -204,8 +222,8 @@ public:
             ADSR::Parameters impulseParams;
             impulseParams.attack = 0.01f;
             impulseParams.decay = 0.1f;
-            impulseParams.sustain = 0.0f;
-            impulseParams.release = 0.1 + *noiseAmount;
+            impulseParams.sustain = 0.1f;
+            impulseParams.release = 0.1;
             impulseEnv.setParameters(impulseParams);
 
             // ====== DSP LOOP =======
@@ -215,52 +233,63 @@ public:
                 float envVal = env.getNextSample();
                 float impulseVal = impulseEnv.getNextSample();
                 float feedbackVal = feedbackEnv.getNextSample();
-                
+               
                 // ====== IMPULSE =======
-                float exciterLeft = random.nextFloat() * impulseVal;
-                float exciterRight = random.nextFloat() * impulseVal;
+                float exciter = random.nextFloat() * impulseVal;
                 
                 // ====== KARPLUS STRONG =======
+                smoothKarplusVol.setTargetValue(*karplusVolAmount);
+                float smoothedKarplusVol = smoothKarplusVol.getNextValue();
+
                 karplusStrongLeft.setDelaytime(freq, *instabilityAmount);
                 karplusStrongRight.setDelaytime(freq + *detuneAmount, *instabilityAmount);
                 karplusStrongLeft.setTail(*tailAmount);
                 karplusStrongRight.setTail(*tailAmount);
 
                 // ====== RESONANT FEEDBACK =======
-                float old1 = *noiseAmount * random.nextInt(10000);
-                float old2 = *noiseAmount * random.nextInt(10000);
+                //float age = 1 - (*noiseAmount * random.nextFloat() * 20);
 
-                //float delayt = *delayTime * (sr / 10) + 100;
+                smoothFeedbackVol.setTargetValue(*feedbackAmount);
+                float smoothedFeedbackVol = smoothFeedbackVol.getNextValue();
 
-                resFeedbackLeft.setDelayTimeInSamples(*delayTime * (sr / 10) + 100 + old1);
+                float delayt = (*delayTime * (sr / 10) + 100);
+
+                resFeedbackLeft.setDelayTimeInSamples(delayt);
                 resFeedbackLeft.setResonator(freq, *qAmount);
-                resFeedbackLeft.setFeedback(*feedbackAmount * feedbackVal); // Trigger feedback by custom ASDR
+                resFeedbackLeft.setFeedback(*feedbackAmount * feedbackVal);
 
-                resFeedbackRight.setDelayTimeInSamples(*delayTime * (sr/10) + 100 + old2);
+                resFeedbackRight.setDelayTimeInSamples(delayt + 100);
                 resFeedbackRight.setResonator(freq + *detuneAmount, *qAmount);
-                resFeedbackRight.setFeedback(*feedbackAmount * feedbackVal); // Trigger feedback by custom ASDR
-
-                float currentSampleLeft = 0.0f;
-                float currentSampleRight = 0.0f;
-
-                // ====== SAMPLE PROCESSING =======
-                currentSampleLeft = karplusStrongLeft.process(exciterLeft) * *karplusVolAmount
-                                    + (resFeedbackLeft.process(karplusStrongLeft.process(exciterLeft), 0) * *feedbackAmount)
-                                    * gain;            
-
-                currentSampleRight = karplusStrongRight.process(exciterRight) * *karplusVolAmount
-                                    + (resFeedbackRight.process(karplusStrongRight.process(exciterRight), 0) * *feedbackAmount)
-                                    * gain;            
-
-
-                // ====== FORMANT PROCESSING =======
+                resFeedbackRight.setFeedback(*feedbackAmount * feedbackVal);
                 
-                for (auto* formant : formants)
+                // ====== SAMPLE PROCESSING =======
+                float currentSampleLeft = karplusStrongLeft.process(exciter) * smoothedKarplusVol
+                                    + (resFeedbackLeft.process(karplusStrongLeft.process(exciter)) * smoothedFeedbackVol)
+                                    * gain;            
+
+                float currentSampleRight = karplusStrongRight.process(exciter) * smoothedKarplusVol
+                                    + (resFeedbackRight.process(karplusStrongRight.process(exciter)) * smoothedFeedbackVol)
+                                    * gain;            
+
+
+                // ====== FORMANTS =======
+                /*
+                for (int i; i < formantAmount; i++)
                 {
-                    formant->processSingleSampleRaw(currentSampleLeft);
-                    formant->processSingleSampleRaw(currentSampleRight);
+                    formants1[i]->processSingleSampleRaw(currentSampleLeft);
                 }
                 
+                
+                for (auto* formant : formants1)
+                {
+                    formant->processSingleSampleRaw(currentSampleLeft); 
+                }
+
+                
+                for (auto* formant : formants2)
+                {
+                    formant->processSingleSampleRaw(currentSampleRight);
+                }*/
 
                 // ====== GLOBAL ENVELOPE =======
                 currentSampleLeft = currentSampleLeft * envVal;
@@ -335,10 +364,16 @@ private:
     ADSR env, impulseEnv, feedbackEnv;
 
     // ====== KARPLUS STRONG =======   
+    SmoothedValue<float> smoothKarplusVol;
     KarplusStrong karplusStrongLeft, karplusStrongRight;
 
     // ====== FEEDBACK RESONATOR =======   
+    SmoothedValue<float> smoothFeedbackVol;
     ResonantFeedback resFeedbackLeft, resFeedbackRight;
+
+    // ====== FORMANTS =======   
+    OwnedArray<IIRFilter> formants1;
+    int formantAmount = 32;
 
     // ====== GLOBAL VOLUME =======   
     Limiter limiter;
@@ -349,9 +384,5 @@ private:
 
     float freq; // Frequency of Synth
     float sr; // Samplerate
-
-
-    OwnedArray<IIRFilter> formants;
-    int formantAmount = 32;
 };
 

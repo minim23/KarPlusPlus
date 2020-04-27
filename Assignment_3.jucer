@@ -4,7 +4,6 @@
   <MAINGROUP id="qQt5i4" name="Assignment_3">
     <GROUP id="{3BCDDF86-D967-72F5-2EE0-3721B97AF773}" name="Source">
       <FILE id="w8U1HZ" name="MySynthesiser.h" compile="0" resource="0" file="Source/MySynthesiser.h"/>
-      <FILE id="bBtMnq" name="Oscillators.h" compile="0" resource="0" file="Source/Oscillators.h"/>
       <FILE id="vOurps" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="JcTb4s" name="BasicDelayLine.h" compile="0" resource="0"
@@ -15,7 +14,6 @@
             file="Source/PluginProcessor.h"/>
       <FILE id="ctYH3d" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
-      <FILE id="DpSNSu" name="Feedback.h" compile="0" resource="0" file="Source/Feedback.h"/>
       <FILE id="e5OC3V" name="ResonantFeedback.h" compile="0" resource="0"
             file="Source/ResonantFeedback.h"/>
       <FILE id="XXNviG" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>

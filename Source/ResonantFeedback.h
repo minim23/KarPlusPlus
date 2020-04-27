@@ -1,4 +1,4 @@
-﻿/*
+/*
   ==============================================================================
 
     ResonantFeedback.h
@@ -19,18 +19,43 @@ public:
     {
     }
 
+    // ====== SETUP SAMPLERATE AND SMOOTHED VALUES =======
+    void setup(int samplerate)
+    {
+        // ====== SMOOTHED VALUE SETUP =======
+        smoothDelaytime.reset(samplerate, 0.02f); // Set samplerate and smoothing of 20ms
+        smoothDelaytime.setCurrentAndTargetValue(0.0); // will be overwritten
+
+        smoothQ.reset(samplerate, 0.2f); // Set samplerate and smoothing of 200ms
+        smoothQ.setCurrentAndTargetValue(0.0); // will be overwritten
+
+        sr = samplerate;
+    }
+
+    // ====== SETUP RESONATOR =======
+    void setResonator(float freq, float q)
+    {
+        // ====== SMOOTHED Q =======
+        smoothQ.setTargetValue(q);
+        float smoothedQ = smoothQ.getNextValue();
+
+        resonator.setCoefficients(IIRCoefficients::makeBandPass(sr, freq, smoothedQ + 0.01));
+
+        resGain = 1 + (q / 10); // Define Gainstage to equally increase the Volume with rising Q Value
+    }
+
     // ====== STORE VALUE AND READ CURRENT POSITION =======
-    float process(float input, float noiseLevel)
+    float process(float input)
     {
         // ====== BACKGROUND NOISE =======
-        float noise = random.nextFloat() * noiseLevel;
+        float noise = random.nextFloat() * 0.0001f;
         
         // ====== PROCESSING =======
         float outVal = readVal();
         outVal = resonator.processSingleSampleRaw(input + outVal) * resGain; // Multiply resonant filter by gainstage
         outVal = tanh(outVal); // Limit signal before feedback
 
-        writeVal(feedback * outVal); 
+        writeVal(feedback * outVal); //Feedback
 
         outVal = tanh(outVal); // Limit output signal after feedback
 
@@ -68,11 +93,6 @@ public:
             readPos += size;
     }
 
-    float getDelayTimeInSamples()
-    {
-        return delayTimeInSamples;
-    }
-
     // ====== SET MAXIMUM SIZE =======
     void setSize(float newSize)
     {
@@ -95,29 +115,9 @@ public:
             feedback = 0.0f;
     }
 
-    // ====== SETUP SAMPLERATE AND SMOOTHED VALUES =======
-    void setup(int samplerate)
+    float getDelayTimeInSamples()
     {
-        // ====== SMOOTHED VALUE SETUP =======
-        smoothDelaytime.reset(samplerate, 0.02f); // Set samplerate and smoothing of 20ms
-        smoothDelaytime.setCurrentAndTargetValue(0.0); // will be overwritten
-
-        smoothQ.reset(samplerate, 0.02f); // Set samplerate and smoothing of 200ms
-        smoothQ.setCurrentAndTargetValue(0.0); // will be overwritten
-
-        sr = samplerate;
-    }
-
-    // ====== SETUP RESONATOR =======
-    void setResonator(float freq, float q)
-    {   
-        // ====== SMOOTHED Q =======
-        smoothQ.setTargetValue(q);
-        float smoothedQ = smoothQ.getNextValue();
-        
-        resonator.setCoefficients(IIRCoefficients::makeBandPass(sr, freq, smoothedQ + 0.01));
-
-        resGain = 1 + (q / 10); // Define Gainstage to equally increase the Volume with rising Q Value
+        return delayTimeInSamples;
     }
 
 

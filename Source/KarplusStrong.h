@@ -51,7 +51,7 @@ public:
     void setDampening(float damp) // Takes values between 0-1
     {
         float filterFreq = (damp + 0.01) // Prevent filter hitting 0 Hz
-                           * 0.99 // Get relative value
+                           * 0.5 // Get practical value   
                            * (sr / 2);  // Multiplies dampening by Nyquist Frequency;
         loPass.setCoefficients(IIRCoefficients::makeLowPass(sr, filterFreq, 1.0f));
     }

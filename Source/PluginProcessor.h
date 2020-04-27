@@ -62,6 +62,7 @@ private:
 
     // Parameter Setup
     AudioProcessorValueTreeState parameters;
+    std::atomic<float>* karplusVolParam;
     std::atomic<float>* dampParam;
     std::atomic<float>* tailParam;
     std::atomic<float>* instabilityParam;
@@ -73,8 +74,6 @@ private:
     std::atomic<float>* qParam;
     std::atomic<float>* noiseParam;
 
-    std::atomic<float>* karplusVolParam;
-
     std::atomic<float>* attackParam;
     std::atomic<float>* decayParam;
     std::atomic<float>* sustainParam;
@@ -82,5 +81,5 @@ private:
 
     // Synthesiser class
     Synthesiser synth;
-    int voiceCount = 24;
+    int voiceCount = 12;
 };
