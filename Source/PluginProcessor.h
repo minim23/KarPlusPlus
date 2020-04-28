@@ -81,5 +81,5 @@ private:
 
     // Synthesiser class
     Synthesiser synth;
-    int voiceCount = 12;
+    int voiceCount = 24;
 };

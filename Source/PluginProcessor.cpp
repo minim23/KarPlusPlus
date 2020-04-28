@@ -29,12 +29,12 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     std::make_unique<AudioParameterFloat>("karplusVol", "Karplus Vol", 0.0f, 1.0f, 0.7f),
 
     std::make_unique<AudioParameterFloat>("damp", "Damp", 0.0f, 1.0f, 0.5f),
-    std::make_unique<AudioParameterFloat>("room", "Room", 0.00f, 1.0f, 0.0f),
+    std::make_unique<AudioParameterChoice>("room", "Noise Colour", StringArray({"Straight", "Formanted"}), 0),
     std::make_unique<AudioParameterFloat>("sustain", "Sustain Noise", 0.0f, 1.0f, 0.8f),
     std::make_unique<AudioParameterFloat>("tail", "Tail", 0.0f, 0.99f, 0.9f),
     std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 0.0f),
 
-    std::make_unique<AudioParameterFloat>("feedback", "Feedback Vol", 0.0f, 10.0f, 0.0f),
+    std::make_unique<AudioParameterFloat>("feedback", "Feedback Vol", 0.0f, 1.0f, 0.0f),
     std::make_unique<AudioParameterFloat>("delaytime", "Delaytime", 0.0f, 10.0f, 5.0f),
     std::make_unique<AudioParameterFloat>("q", "Resonance", 0.1f, 100.0f, 50.0f),
     std::make_unique<AudioParameterFloat>("feedbackAge", "Age", 0.0f, 1.0f, 0.0f),

@@ -200,7 +200,7 @@ public:
             impulseParams.attack = 0.01f;
             impulseParams.decay = 0.1f;
             impulseParams.sustain = *sustain * 0.3;
-            impulseParams.release = 0.1;
+            impulseParams.release = *release;
             impulseEnv.setParameters(impulseParams);
 
             // ====== DSP LOOP =======
@@ -215,22 +215,32 @@ public:
                 float exciterLeft = random.nextFloat() * impulseVal;
                 float exciterRight = random.nextFloat() * impulseVal;
 
-                // ====== IMPULSE COLOURATION =======
-                float exColourLeft = 0.0f;
-                float exColourRight = 0.0f;
+                // ====== APPLY IMPULSE COLOUR =======
 
-                for (auto* formant : formantsLeft)
-                {
-                    exColourLeft = formant->processSingleSampleRaw(exciterLeft);              
-                }
-                for (auto* formant : formantsRight)
-                {
-                    exColourRight = formant->processSingleSampleRaw(exciterRight);              
-                }
 
                 // ====== DECIDE IMPULSE COLOUR =======
-                exciterLeft = exciterLeft * (1 - *room) + (exColourLeft / formantAmount * *room);
-                exciterRight = exciterRight * (1 - *room) + (exColourRight / formantAmount * *room);
+                if (*room < 1)
+                {
+                    exciterLeft = exciterLeft;
+                    exciterRight = exciterRight;
+                }
+                else 
+                {
+                    float exColourLeft = 0.0f;
+                    float exColourRight = 0.0f;
+
+                    for (auto* formant : formantsLeft)
+                    {
+                        exColourLeft = formant->processSingleSampleRaw(exciterLeft);
+                    }
+                    for (auto* formant : formantsRight)
+                    {
+                        exColourRight = formant->processSingleSampleRaw(exciterRight);
+                    }
+                    
+                    exciterLeft = exColourLeft / formantAmount * sqrt(formantAmount);
+                    exciterRight = exColourRight / formantAmount * sqrt(formantAmount);
+                };
                 
                 // ====== KARPLUS STRONG =======
                 karplusStrongLeft.setPitch(freq, *instabilityAmount);
@@ -343,7 +353,7 @@ private:
 
     // ====== FORMANTS =======   
     OwnedArray<IIRFilter> formantsLeft, formantsRight;
-    int formantAmount = 10;
+    int formantAmount = 20;
 
     // ====== GLOBAL VOLUME =======   
     Limiter limiter;
