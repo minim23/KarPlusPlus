@@ -15,6 +15,7 @@
 class Limiter
 {
 public:
+    // ====== PRETENDS TO BE A LIMITER =======
     float process(float input, float dist)
     {
         if (input > 1)
@@ -25,6 +26,7 @@ public:
         return input;
     }
 
+    // ====== FOLDOVER DISTORTION =======
     float foldback(float in, float threshold)
     {
         if (in > threshold || in < -threshold)
@@ -33,7 +35,4 @@ public:
         }
         return in;
     }
-
-private:
-
 };

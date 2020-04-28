@@ -76,6 +76,7 @@ private:
     std::atomic<float>* delaytimeParam;
     std::atomic<float>* qParam;
     std::atomic<float>* feedbackAgeParam;
+    std::atomic<float>* offsetParam;
 
     std::atomic<float>* releaseParam;
 

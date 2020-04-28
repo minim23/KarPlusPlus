@@ -12,6 +12,7 @@
       <FILE id="ctYH3d" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="XXNviG" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="ep8Ive" name="Oscillators.h" compile="0" resource="0" file="Source/Oscillators.h"/>
       <FILE id="sjuHDx" name="FeedbackDelay.h" compile="0" resource="0" file="Source/FeedbackDelay.h"/>
     </GROUP>
   </MAINGROUP>

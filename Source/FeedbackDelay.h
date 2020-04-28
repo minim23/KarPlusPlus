@@ -1,5 +1,5 @@
 #pragma once
-#include <cmath>
+#include <cmath> // Used for tanh()
 
 class FeedbackDelay
 {
@@ -9,12 +9,12 @@ public:
     FeedbackDelay() {}
     ~FeedbackDelay() {}
 
-    // ====== STANDART PROCESS THAT CAN BE REPLACED =======
+    // ====== STANDART PROCESS THAT CAN BE REPLACED OR RE-USED =======
     virtual float process(float inSamp)
     {
         float outVal = readVal();
-        writeVal(inSamp + feedback * outVal);     // note the feedback here, scaling the output back in to the delay
-        float floor(outVal); 
+        writeVal(inSamp + feedback * outVal); // Feedback scales output back into input
+        float floor(outVal); // Calculate interpolation
         return floor;
     }
     
@@ -43,7 +43,7 @@ public:
     void setDelayTimeInSamples(float delTime)
     {
         smoothDelaytime.setTargetValue(delTime);
-        delayTimeInSamples = smoothDelaytime.getNextValue();
+        delayTimeInSamples = smoothDelaytime.getNextValue(); // Smoothed value
 
         readPos = writePos - delayTimeInSamples;
         while (readPos < 0)
@@ -98,8 +98,8 @@ private:
     float* buffer; // Buffer
     int size; // Buffer Size
     
-    int writePos = 0;  
-    int readPos = 0.0f; 
+    int writePos = 0;  // Write Position
+    int readPos = 0.0f;  // Read Position
     
     int delayTimeInSamples;
     
@@ -111,12 +111,47 @@ private:
     
 };
 
+// ====== KARPLUS STRONG =======
+class KarplusStrong : public FeedbackDelay
+{
+public:
+    // ====== PROCESS =======
+    float kSProcess(float in)
+    {
+        in = dampen.processSingleSampleRaw(in); // Dampen Incoming Signal
+        in = process(in); // Use original processing
+
+        return in;
+    }
+
+    // ====== DAMPENING =======
+    void setDampening(float damp) // Takes values between 0-1
+    {
+        float filterFreq = (damp + 0.01) // Prevent filter hitting 0 Hz
+                            * (getSamplerate() / 2)  // Multiplies dampening by Nyquist Frequency
+                            * 0.5; // Get practical value   
+
+        dampen.setCoefficients(IIRCoefficients::makeLowPass(getSamplerate(), filterFreq, 1.0f));
+    }
+
+    // ====== PITCH WITH INSTABILITY =======
+    void setPitch(float freq, float instabilityAmount)
+    {
+        float delayFreq = getSamplerate() / freq; // Get delaytime from frequency
+        instabilityAmount = random.nextFloat() * instabilityAmount; // instability amount equals a frequency value - 20Hz seems practical
+
+        setDelayTimeInSamples(delayFreq + instabilityAmount); // Set delaytime in original function
+    }
+
+private:
+    IIRFilter dampen;
+    Random random;
+};
 
 // ====== RESONANT FEEDBACK =======
 class ResonantFeedback : public FeedbackDelay
 {
 public:
-
     // ====== SETUP SAMPLERATE AND SMOOTHED VALUES =======
     void resonatorSetup()
     {
@@ -125,12 +160,12 @@ public:
     }
 
     // ====== SETUP RESONATOR =======
-    void setResonator(float freq, float q)
+    void setResonator(float freq, float q)  // Q of 0-100 seems useful
     {
         smoothQ.setTargetValue(q);
-        float smoothedQ = smoothQ.getNextValue();
+        float smoothedQ = smoothQ.getNextValue(); // Smoothed resonance value
 
-        resonator.setCoefficients(IIRCoefficients::makeBandPass(getSamplerate(), freq, smoothedQ + 0.01));
+        resonator.setCoefficients(IIRCoefficients::makeBandPass(getSamplerate(), freq, smoothedQ + 0.01)); // Make sure to have samplerate set
 
         resGain = 1 + (q / 10); // Define Gainstage to equally increase the Volume with rising Q Value
     }
@@ -138,10 +173,8 @@ public:
     // ====== STORE VALUE AND READ CURRENT POSITION =======
     float process(float input) override
     {
-        // ====== BACKGROUND NOISE =======
-        float noise = random.nextFloat() * 0.0001f;
+        float noise = random.nextFloat() * 0.0001f; // Low level Background noise to excite self oscillation
 
-        // ====== PROCESSING =======
         float outVal = readVal();
         outVal = resonator.processSingleSampleRaw(input + outVal) * resGain; // Multiply resonant filter by gainstage
         outVal = tanh(outVal); // Limit signal before feedback
@@ -150,7 +183,7 @@ public:
 
         outVal = tanh(outVal); // Limit output signal after feedback
 
-        float floor(outVal); // calculates interpolation
+        float floor(outVal); // Calculate interpolation
         return floor;    
     }
 
@@ -159,44 +192,6 @@ private:
     SmoothedValue<float> smoothQ;
     float resGain;
 
-    Random random;
-};
-
-
-// ====== KARPLUS STRONG =======
-class KarplusStrong : public FeedbackDelay
-{
-public:
-    // ====== PROCESS =======
-    float kSProcess(float in)
-    {
-        in = loPass.processSingleSampleRaw(in); // Dampen Incoming Signal
-        in = process(in);
-
-        return in;
-    }
-
-    // ====== LOW PASS FILTER =======
-    void setDampening(float damp) // Takes values between 0-1
-    {
-        float filterFreq = (damp + 0.01) // Prevent filter hitting 0 Hz
-            * 0.5 // Get practical value   
-            * (getSamplerate() / 2);  // Multiplies dampening by Nyquist Frequency;
-        loPass.setCoefficients(IIRCoefficients::makeLowPass(getSamplerate(), filterFreq, 1.0f));
-    }
-
-    // ====== PITCH WITH INSTABILITY =======
-    void setPitch(float freq, float instabilityAmount)
-    {
-        float delayFreq = getSamplerate() / freq; // Get delaytime from freq
-        instabilityAmount = random.nextFloat() * instabilityAmount;
-
-        setDelayTimeInSamples(delayFreq + instabilityAmount); // Set delaytime to same amount
-    }
-
-private:
-
-    IIRFilter loPass;
     Random random;
 };
 
