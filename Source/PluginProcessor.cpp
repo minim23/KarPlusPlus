@@ -27,39 +27,39 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     // Parameter Layout
     // id, description, min val, max val, default val
     std::make_unique<AudioParameterFloat>("karplusVol", "Karplus Vol", 0.0f, 1.0f, 0.7f),
+
     std::make_unique<AudioParameterFloat>("damp", "Damp", 0.0f, 1.0f, 0.5f),
+    std::make_unique<AudioParameterFloat>("room", "Room", 0.00f, 1.0f, 0.0f),
+    std::make_unique<AudioParameterFloat>("sustain", "Sustain Noise", 0.0f, 1.0f, 0.8f),
     std::make_unique<AudioParameterFloat>("tail", "Tail", 0.0f, 0.99f, 0.9f),
     std::make_unique<AudioParameterFloat>("instability", "Instability", 0.0f, 20.0f, 0.0f),
 
     std::make_unique<AudioParameterFloat>("feedback", "Feedback Vol", 0.0f, 10.0f, 0.0f),
     std::make_unique<AudioParameterFloat>("delaytime", "Delaytime", 0.0f, 10.0f, 5.0f),
-    std::make_unique<AudioParameterFloat>("q", "Q", 0.1f, 100.0f, 50.0f),
-    std::make_unique<AudioParameterFloat>("noise", "Feedback Colour", 0.0f, 1.0f, 0.0f),
+    std::make_unique<AudioParameterFloat>("q", "Resonance", 0.1f, 100.0f, 50.0f),
+    std::make_unique<AudioParameterFloat>("feedbackAge", "Age", 0.0f, 1.0f, 0.0f),
 
     std::make_unique<AudioParameterFloat>("detune", "Detune", 0.0f, 20.0f, 0.0f),
 
-    std::make_unique<AudioParameterFloat>("attack", "Formants", 100.00f, 6000.0f, 500.0f),
-    std::make_unique<AudioParameterFloat>("decay", "Craziness", 00.00f, 1.0f, 0.0f),
-    std::make_unique<AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 0.8f),
     std::make_unique<AudioParameterFloat>("release", "Release", 0.5f, 10.0f, 5.0f)
         })
 {
 
     karplusVolParam = parameters.getRawParameterValue("karplusVol");
+
     dampParam = parameters.getRawParameterValue("damp");
+    roomParam = parameters.getRawParameterValue("room"); //room
+    sustainParam = parameters.getRawParameterValue("sustain"); //sustain noise
     tailParam = parameters.getRawParameterValue("tail");
     instabilityParam = parameters.getRawParameterValue("instability");
 
     feedbackParam = parameters.getRawParameterValue("feedback");
     delaytimeParam = parameters.getRawParameterValue("delaytime");
     qParam = parameters.getRawParameterValue("q");
-    noiseParam = parameters.getRawParameterValue("noise");
+    feedbackAgeParam = parameters.getRawParameterValue("feedbackAge");
 
     detuneParam = parameters.getRawParameterValue("detune");
 
-    attackParam = parameters.getRawParameterValue("attack");
-    decayParam = parameters.getRawParameterValue("decay");
-    sustainParam = parameters.getRawParameterValue("sustain");
     releaseParam = parameters.getRawParameterValue("release"); 
 
     // Constructor to set up polyphony
@@ -75,20 +75,19 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
         MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
         v->setParameterPointers(
             karplusVolParam,
+
             dampParam,
+            roomParam,
+            sustainParam,
             tailParam,
             instabilityParam,
 
             feedbackParam,
             delaytimeParam,
             qParam,
-            noiseParam,
+            feedbackAgeParam,
 
-            detuneParam,
-            
-            attackParam, 
-            decayParam, 
-            sustainParam, 
+            detuneParam,           
             releaseParam);
     }
 

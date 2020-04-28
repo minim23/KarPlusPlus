@@ -1,5 +1,4 @@
 #pragma once
-
 #include <cmath>
 
 class FeedbackDelay
@@ -10,11 +9,12 @@ public:
     FeedbackDelay() {}
     ~FeedbackDelay() {}
 
+    // ====== STANDART PROCESS THAT CAN BE REPLACED =======
     virtual float process(float inSamp)
     {
         float outVal = readVal();
         writeVal(inSamp + feedback * outVal);     // note the feedback here, scaling the output back in to the delay
-        float floor(outVal); // calculates interpolation
+        float floor(outVal); 
         return floor;
     }
     
@@ -23,7 +23,6 @@ public:
     {
         sr = samplerate;
 
-        // ====== SMOOTHED VALUE SETUP =======
         smoothDelaytime.reset(sr, 0.02f); // Set samplerate and smoothing of 20ms
         smoothDelaytime.setCurrentAndTargetValue(0.0); // will be overwritten
 
@@ -128,7 +127,6 @@ public:
     // ====== SETUP RESONATOR =======
     void setResonator(float freq, float q)
     {
-        // ====== SMOOTHED Q =======
         smoothQ.setTargetValue(q);
         float smoothedQ = smoothQ.getNextValue();
 
@@ -153,7 +151,7 @@ public:
         outVal = tanh(outVal); // Limit output signal after feedback
 
         float floor(outVal); // calculates interpolation
-        return floor;
+        return floor;    
     }
 
 private:
@@ -187,7 +185,7 @@ public:
         loPass.setCoefficients(IIRCoefficients::makeLowPass(getSamplerate(), filterFreq, 1.0f));
     }
 
-    // ====== PITCH WITH INSTABILITY FUNCTION =======
+    // ====== PITCH WITH INSTABILITY =======
     void setPitch(float freq, float instabilityAmount)
     {
         float delayFreq = getSamplerate() / freq; // Get delaytime from freq
