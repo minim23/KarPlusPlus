@@ -129,7 +129,7 @@ public:
     {
         float filterFreq = (damp + 0.01) // Prevent filter hitting 0 Hz
                             * (getSamplerate() / 2)  // Multiplies dampening by Nyquist Frequency
-                            * 0.5; // Get practical value   
+                            * 0.9; // Get practical value   
 
         dampen.setCoefficients(IIRCoefficients::makeLowPass(getSamplerate(), filterFreq, 1.0f));
     }

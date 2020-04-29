@@ -221,8 +221,8 @@ public:
                 // ====== DECIDE IMPULSE COLOUR =======
                 if (*room < 1) // Dry
                 {
-                    exciterLeft = exciterLeft;
-                    exciterRight = exciterRight;
+                    exciterLeft = exciterLeft * 0.4; // Adjust volume
+                    exciterRight = exciterRight * 0.4; // Adjust volume
                 }
                 else // Formanted
                 {
@@ -239,13 +239,11 @@ public:
                     }
                     
                     exciterLeft = exColourLeft 
-                                  / formantAmount // Adjust volume relative to formant amount
-                                  * sqrt(formantAmount) // Adjust volume relative to resonance of filter
-                                  / 4; // Adjust volume relative to Dry level
+                                  * sqrt(formantAmount); // Adjust volume relative to resonance of filter
+                                 
                     exciterRight = exColourRight
-                                  / formantAmount
-                                  * sqrt(formantAmount)
-                                  / 4;
+                                  * sqrt(formantAmount);
+                                  
                 };
                 
                 // ====== KARPLUS STRONG =======
@@ -277,12 +275,11 @@ public:
                 
                 // ====== SAMPLE PROCESSING =======
                 float currentSampleLeft = karplusStrongLeft.kSProcess(exciterLeft) * smoothedKarplusVol // Karplus Strong Volume
-                                          + (resFeedbackLeft.process(karplusStrongLeft.process(exciterRight)) * smoothedFeedbackVol) // Resonant Feedback Volume - KS inserted
-                                          * gain; // Volume
+                                        + (resFeedbackLeft.process(karplusStrongLeft.process(exciterRight)) * smoothedFeedbackVol); // Resonant Feedback Volume - KS inserted
+
 
                 float currentSampleRight = karplusStrongRight.kSProcess(exciterRight) * smoothedKarplusVol
-                                           + (resFeedbackRight.process(karplusStrongRight.process(exciterLeft)) * smoothedFeedbackVol)
-                                           * gain;
+                                           + (resFeedbackRight.process(karplusStrongRight.process(exciterLeft)) * smoothedFeedbackVol);
                 
                 // ====== GLOBAL ENVELOPE =======
                 currentSampleLeft = currentSampleLeft
@@ -291,8 +288,8 @@ public:
                                     * envVal;
 
                 // ====== LIMIT OUTPUT =======          
-                //currentSampleLeft = limiter.process(currentSampleLeft, 0.95f);
-                //currentSampleRight = limiter.process(currentSampleRight, 0.95f);
+                currentSampleLeft = limiter.process(currentSampleLeft, 0.95f) * gain;
+                currentSampleRight = limiter.process(currentSampleRight, 0.95f) * gain;
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
@@ -365,7 +362,7 @@ private:
 
     // ====== GLOBAL VOLUME =======   
     Limiter limiter;
-    float gain = 0.3f;
+    float gain = 0.05f;
 
     // ====== UTILITY =======   
     Random random; // for White Noise
