@@ -65,7 +65,6 @@ private:
     std::atomic<float>* karplusVolParam;
 
     std::atomic<float>* dampParam;
-    std::atomic<float>* roomParam;
     std::atomic<float>* sustainParam;
     std::atomic<float>* tailParam;
     std::atomic<float>* instabilityParam;
@@ -79,8 +78,9 @@ private:
     std::atomic<float>* offsetParam;
 
     std::atomic<float>* releaseParam;
+    std::atomic<float>* volumeParam;
 
     // Synthesiser class
     Synthesiser synth;
-    int voiceCount = 24;
+    int voiceCount = 16;
 };

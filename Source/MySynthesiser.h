@@ -37,7 +37,6 @@ public:
     void setParameterPointers(
 
     std::atomic<float>* karplusVolIn,
-    std::atomic<float>* roomIn,
     std::atomic<float>* dampIn,
     std::atomic<float>* sustainIn,
     std::atomic<float>* tailIn,
@@ -47,13 +46,14 @@ public:
     std::atomic<float>* delayTimeIn,
     std::atomic<float>* qIn,
     std::atomic<float>* feedbackAgeIn,
+    std::atomic<float>* detuneIn,
     std::atomic<float>* offsetIn,
 
-    std::atomic<float>* detuneIn,
-    std::atomic<float>* releaseIn)
+    std::atomic<float>* releaseIn,
+    std::atomic<float>* volumeIn
+    )
     {
         karplusVolAmount = karplusVolIn;
-        room = roomIn;
         dampAmount = dampIn;
         sustain = sustainIn;
         tailAmount = tailIn;
@@ -63,10 +63,11 @@ public:
         delayTime = delayTimeIn;
         qAmount = qIn;
         feedbackAgeAmount = feedbackAgeIn;
+        detuneAmount = detuneIn;
         offsetAmount = offsetIn;
 
-        detuneAmount = detuneIn;
         release = releaseIn;
+        volume = volumeIn;
     }
 
     // ====== SETUP FORMANTS =======
@@ -90,9 +91,6 @@ public:
         karplusStrongLeft.setSize(sr * 10);
         karplusStrongRight.setSize(sr * 10);
 
-        smoothKarplusVol.reset(sr, 0.2f); // Smoothed value of 200ms
-        smoothKarplusVol.setCurrentAndTargetValue(0.0);
-
         // ====== RESONANT FEEDBACK SETUP =======
         resFeedbackLeft.setSamplerate(sr);
         resFeedbackLeft.resonatorSetup();
@@ -102,17 +100,15 @@ public:
         resFeedbackRight.resonatorSetup();
         resFeedbackRight.setSize(sr * 30);
 
+        // ====== VOLUME SMOOTHING SETUP =======
+        smoothKarplusVol.reset(sr, 0.2f); // Smoothed value of 200ms
+        smoothKarplusVol.setCurrentAndTargetValue(0.0);
+
         smoothFeedbackVol.reset(sr, 0.2f); // Smoothed value of 200ms
-        smoothFeedbackVol.setCurrentAndTargetValue(0.0); 
+        smoothFeedbackVol.setCurrentAndTargetValue(0.0);
 
-        // ====== FORMANT COEFFICIENTS =======   
-        for (int i = 0; i < formantAmount; i++)
-        {
-            float maxFreq = 5000; // Maximum random frequency for array of filters
-
-            formantsLeft[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, random.nextInt(maxFreq / 2) + maxFreq / 2 + 20, (random.nextFloat() - 0.01) + 0.01));
-            formantsRight[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, random.nextInt(maxFreq / 2) + maxFreq / 2 + 20, (random.nextFloat() - 0.01) + 0.01));
-        }
+        globalVol.reset(sr, 0.02f); // Smoothed value of 20ms
+        globalVol.setCurrentAndTargetValue(0.0);
     }
     
     //--------------------------------------------------------------------------
@@ -135,6 +131,21 @@ public:
         // ====== DAMPENING =======
         karplusStrongLeft.setDampening(*dampAmount);
         karplusStrongRight.setDampening(*dampAmount);
+
+        // ====== FORMANT COEFFICIENTS =======   
+        for (int i = 0; i < formantAmount; i++)
+        {
+            float maxRandFreq = *dampAmount // Get relative value
+                                * 1000 // Max. Freq for ranomization of filters
+                                + 1; // Next Int can not be 0
+
+            float maxFreq = *dampAmount // Get relative value
+                            * 4000 // Rough max. Freq
+                            + 100; // Absolute min. Freq
+
+            formantsLeft[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
+            formantsRight[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
+        }
 
         // ====== TRIGGER ENVELOPES =======
         env.reset(); // clear out envelope before re-triggering it
@@ -209,6 +220,16 @@ public:
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
             {               
+                // ====== SMOOTHED VOLUMES =======
+                smoothFeedbackVol.setTargetValue(*feedbackAmount); // Resonant Feedback Volume
+                float smoothedFeedbackVol = smoothFeedbackVol.getNextValue();
+
+                smoothKarplusVol.setTargetValue(*karplusVolAmount); // Karplus Strong Volume
+                float smoothedKarplusVol = smoothKarplusVol.getNextValue();
+
+                globalVol.setTargetValue(*volume); // Output Volume
+                float smoothedGlobalVol = globalVol.getNextValue();
+
                 // ====== ENVELOPE VALUES =======
                 float envVal = env.getNextSample();
                 float impulseVal = impulseEnv.getNextSample();
@@ -218,33 +239,26 @@ public:
                 float exciterLeft = random.nextFloat() * impulseVal; // Enveloped White Noise
                 float exciterRight = random.nextFloat() * impulseVal;
 
-                // ====== DECIDE IMPULSE COLOUR =======
-                if (*room < 1) // Dry
-                {
-                    exciterLeft = exciterLeft * 0.4; // Adjust volume
-                    exciterRight = exciterRight * 0.4; // Adjust volume
-                }
-                else // Formanted
-                {
-                    float exColourLeft = 0.0f;
-                    float exColourRight = 0.0f;
+                // ====== FORMANTS =======
+                float exColourLeft = 0.0f;
+                float exColourRight = 0.0f;
 
-                    for (auto* formant : formantsLeft) // Process through array of randomized Bandpass Filters on left and right channel
-                    {
-                        exColourLeft = formant->processSingleSampleRaw(exciterLeft);
-                    }
-                    for (auto* formant : formantsRight)
-                    {
-                        exColourRight = formant->processSingleSampleRaw(exciterRight);
-                    }
+                for (auto* formant : formantsLeft) // Process Impulse through array of randomized Bandpass Filters on left and right channel
+                {
+                     exColourLeft = formant->processSingleSampleRaw(exciterLeft);
+                }
+                for (auto* formant : formantsRight)
+                {
+                    exColourRight = formant->processSingleSampleRaw(exciterRight);
+                }
                     
-                    exciterLeft = exColourLeft 
-                                  * sqrt(formantAmount); // Adjust volume relative to resonance of filter
+                exciterLeft = exColourLeft // Impulse->Formants
+                              / formantAmount // Adjust volume relative to formant amount
+                              * sqrt(formantAmount); // Adjust volume relative to resonance of filter
                                  
-                    exciterRight = exColourRight
-                                  * sqrt(formantAmount);
-                                  
-                };
+                exciterRight = exColourRight
+                              / formantAmount
+                              * sqrt(formantAmount);
                 
                 // ====== KARPLUS STRONG =======
                 karplusStrongLeft.setPitch(freq, *instabilityAmount);
@@ -258,20 +272,13 @@ public:
                 float delayt = (*delayTime * (sr / 20)) * age; // Delaytime multiplied by Feedback Colour
                 float offset = *offsetAmount * (freq / 2); // Phasing up to 180*
 
-                resFeedbackLeft.setDelayTimeInSamples(delayt + 100); // Slight offset of left and right channel
+                resFeedbackLeft.setDelayTimeInSamples(delayt + 100 + offset); // Slight offset of left and right channel with control of phasing
                 resFeedbackLeft.setResonator(freq, *qAmount);
-                resFeedbackLeft.setFeedback(*feedbackAmount * feedbackVal); // Envelope controlling Feedback amount
+                resFeedbackLeft.setFeedback(*feedbackAmount * feedbackVal); // Envelope controlling Feedback amount relative to maximum volume
 
-                resFeedbackRight.setDelayTimeInSamples(delayt + 100 + offset); // Control Offset
+                resFeedbackRight.setDelayTimeInSamples(delayt + 100);
                 resFeedbackRight.setResonator(freq + *detuneAmount, *qAmount); // Detuning between left and right channel
                 resFeedbackRight.setFeedback(*feedbackAmount * feedbackVal);
-
-                // ====== SMOOTH VOLUMES =======
-                smoothFeedbackVol.setTargetValue(*feedbackAmount);
-                float smoothedFeedbackVol = smoothFeedbackVol.getNextValue();
-
-                smoothKarplusVol.setTargetValue(*karplusVolAmount);
-                float smoothedKarplusVol = smoothKarplusVol.getNextValue();
                 
                 // ====== SAMPLE PROCESSING =======
                 float currentSampleLeft = karplusStrongLeft.kSProcess(exciterLeft) * smoothedKarplusVol // Karplus Strong Volume
@@ -288,8 +295,12 @@ public:
                                     * envVal;
 
                 // ====== LIMIT OUTPUT =======          
-                currentSampleLeft = limiter.process(currentSampleLeft, 0.95f) * gain;
-                currentSampleRight = limiter.process(currentSampleRight, 0.95f) * gain;
+                currentSampleLeft = limiter.process(currentSampleLeft, 0.95f) // Tanh Function
+                                    * gain // Maximum volume
+                                    * smoothedGlobalVol; // Output Control for volume adjustment
+                currentSampleRight = limiter.process(currentSampleRight, 0.95f) 
+                                    * gain 
+                                    * smoothedGlobalVol;
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
@@ -340,10 +351,11 @@ private:
     std::atomic<float>* delayTime;
     std::atomic<float>* qAmount;
     std::atomic<float>* feedbackAgeAmount;
+    std::atomic<float>* detuneAmount;
     std::atomic<float>* offsetAmount;
 
-    std::atomic<float>* detuneAmount;
     std::atomic<float>* release;
+    std::atomic<float>* volume;
 
     // ====== ENVELOPES =======   
     ADSR env, impulseEnv, feedbackEnv;
@@ -361,8 +373,9 @@ private:
     int formantAmount = 20;
 
     // ====== GLOBAL VOLUME =======   
+    SmoothedValue<float> globalVol;
+    float gain = 1.0f;
     Limiter limiter;
-    float gain = 0.05f;
 
     // ====== UTILITY =======   
     Random random; // for White Noise
