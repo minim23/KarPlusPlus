@@ -1,6 +1,5 @@
 #pragma once
 #include "FeedbackDelay.h"
-#include "Limiter.h"
 
 // ===========================
 // ===========================
@@ -88,13 +87,13 @@ public:
         // ====== KARPLUS STRONG SETUP =======
         karplusStrongLeft.setSamplerate(sr);
         karplusStrongRight.setSamplerate(sr);
-        karplusStrongLeft.setSize(sr * 10);
+        karplusStrongLeft.setSize(sr * 10); // Practical delay size - possibly too big
         karplusStrongRight.setSize(sr * 10);
 
         // ====== RESONANT FEEDBACK SETUP =======
         resFeedbackLeft.setSamplerate(sr);
-        resFeedbackLeft.resonatorSetup();
-        resFeedbackLeft.setSize(sr * 30);
+        resFeedbackLeft.resonatorSetup(); // Gets samplerate from function above - could possibly be simplified or improved
+        resFeedbackLeft.setSize(sr * 30); // Practical delay size
 
         resFeedbackRight.setSamplerate(sr);
         resFeedbackRight.resonatorSetup();
@@ -231,16 +230,16 @@ public:
                 float smoothedGlobalVol = globalVol.getNextValue();
 
                 // ====== ENVELOPE VALUES =======
-                float envVal = env.getNextSample();
-                float impulseVal = impulseEnv.getNextSample();
-                float feedbackVal = feedbackEnv.getNextSample();
+                float envVal = env.getNextSample(); // Global envelope
+                float impulseVal = impulseEnv.getNextSample(); // White Noise envelope
+                float feedbackVal = feedbackEnv.getNextSample(); // Resonant Feedback envelope
                
                 // ====== IMPULSE =======
                 float exciterLeft = random.nextFloat() * impulseVal; // Enveloped White Noise
                 float exciterRight = random.nextFloat() * impulseVal;
 
                 // ====== FORMANTS =======
-                float exColourLeft = 0.0f;
+                float exColourLeft = 0.0f; // Setting up colouration - for some reason it sounded differently when exciter was assigned to formants directly
                 float exColourRight = 0.0f;
 
                 for (auto* formant : formantsLeft) // Process Impulse through array of randomized Bandpass Filters on left and right channel
@@ -252,9 +251,9 @@ public:
                     exColourRight = formant->processSingleSampleRaw(exciterRight);
                 }
                     
-                exciterLeft = exColourLeft // Impulse->Formants
+                exciterLeft = exColourLeft // Take formanted impulse
                               / formantAmount // Adjust volume relative to formant amount
-                              * sqrt(formantAmount); // Adjust volume relative to resonance of filter
+                              * sqrt(formantAmount); // Adjust volume relative to resonance of filter - normally this should be square root of Q, but this did not seem practical
                                  
                 exciterRight = exColourRight
                               / formantAmount
@@ -264,12 +263,12 @@ public:
                 karplusStrongLeft.setPitch(freq, *instabilityAmount);
                 karplusStrongRight.setPitch(freq + *detuneAmount, *instabilityAmount); // Detuning between left and right channel
 
-                karplusStrongLeft.setFeedback(*tailAmount);
+                karplusStrongLeft.setFeedback(*tailAmount); // Feedback between 0-1
                 karplusStrongRight.setFeedback(*tailAmount);
 
                 // ====== RESONANT FEEDBACK =======              
                 float age = 1 - (*feedbackAgeAmount * random.nextFloat()); // Feedback Colour (Randomization of Delaytime)
-                float delayt = (*delayTime * (sr / 20)) * age; // Delaytime multiplied by Feedback Colour
+                float delayt = (*delayTime * (sr / 20)) * age; // Delaytime set to an arbitrary, functional value - initially this was set to get ms - multiplied by Feedback Colour 
                 float offset = *offsetAmount * (freq / 2); // Phasing up to 180*
 
                 resFeedbackLeft.setDelayTimeInSamples(delayt + 100 + offset); // Slight offset of left and right channel with control of phasing
@@ -280,27 +279,20 @@ public:
                 resFeedbackRight.setResonator(freq + *detuneAmount, *qAmount); // Detuning between left and right channel
                 resFeedbackRight.setFeedback(*feedbackAmount * feedbackVal);
                 
-                // ====== SAMPLE PROCESSING =======
+                // ====== SAMPLE PROCESSING CHAIN =======
                 float currentSampleLeft = karplusStrongLeft.kSProcess(exciterLeft) * smoothedKarplusVol // Karplus Strong Volume
                                         + (resFeedbackLeft.process(karplusStrongLeft.process(exciterRight)) * smoothedFeedbackVol); // Resonant Feedback Volume - KS inserted
-
 
                 float currentSampleRight = karplusStrongRight.kSProcess(exciterRight) * smoothedKarplusVol
                                            + (resFeedbackRight.process(karplusStrongRight.process(exciterLeft)) * smoothedFeedbackVol);
                 
-                // ====== GLOBAL ENVELOPE =======
+                // ====== GLOBAL ENVELOPE AND VOLUME =======
                 currentSampleLeft = currentSampleLeft
-                                    * envVal;
+                                    * envVal // Global envelope
+                                    * smoothedGlobalVol * smoothedGlobalVol * smoothedGlobalVol; // Exponential output control for volume adjustment
                 currentSampleRight = currentSampleRight
-                                    * envVal;
-
-                // ====== LIMIT OUTPUT =======          
-                currentSampleLeft = limiter.process(currentSampleLeft, 0.95f) // Tanh Function
-                                    * gain // Maximum volume
-                                    * smoothedGlobalVol; // Output Control for volume adjustment
-                currentSampleRight = limiter.process(currentSampleRight, 0.95f) 
-                                    * gain 
-                                    * smoothedGlobalVol;
+                                    * envVal
+                                    * smoothedGlobalVol * smoothedGlobalVol * smoothedGlobalVol;
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
@@ -360,6 +352,11 @@ private:
     // ====== ENVELOPES =======   
     ADSR env, impulseEnv, feedbackEnv;
 
+    // ====== IMPULSE =======   
+    Random random; // for White Noise
+    OwnedArray<IIRFilter> formantsLeft, formantsRight;
+    int formantAmount = 20;
+
     // ====== KARPLUS STRONG =======   
     SmoothedValue<float> smoothKarplusVol;
     KarplusStrong karplusStrongLeft, karplusStrongRight;
@@ -368,18 +365,10 @@ private:
     SmoothedValue<float> smoothFeedbackVol;
     ResonantFeedback resFeedbackLeft, resFeedbackRight;
 
-    // ====== FORMANTS =======   
-    OwnedArray<IIRFilter> formantsLeft, formantsRight;
-    int formantAmount = 20;
-
     // ====== GLOBAL VOLUME =======   
     SmoothedValue<float> globalVol;
-    float gain = 1.0f;
-    Limiter limiter;
 
     // ====== UTILITY =======   
-    Random random; // for White Noise
-
     float freq; // Frequency of Synth
     float sr; // Samplerate
 };

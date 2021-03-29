@@ -45,7 +45,6 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
     std::make_unique<AudioParameterFloat>("volume", "Volume", 0.0f, 1.0f, 0.7f)
         })
 {
-
     karplusVolParam = parameters.getRawParameterValue("karplusVol");
 
     dampParam = parameters.getRawParameterValue("damp");
@@ -94,10 +93,10 @@ Assignment_3AudioProcessor::Assignment_3AudioProcessor()
             );
     }
 
-    // ====== FORMANTS =======
+    // ====== FORMANTS SETUP =======
     for (int i = 0; i < voiceCount; i++)
     {
-    MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
+    MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i));
     v->setFormants();
     }
 }
@@ -168,7 +167,7 @@ void Assignment_3AudioProcessor::changeProgramName(int index, const String& newN
 {
 }
  
-// =============== PREPARE TO PLAY ====================
+// =============== PREPARE TO PLAY - SAMPLERATE SETUP ====================
 void Assignment_3AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     synth.setCurrentPlaybackSampleRate(sampleRate);

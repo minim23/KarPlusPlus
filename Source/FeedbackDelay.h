@@ -21,7 +21,7 @@ public:
     // ====== SETTER FUNCTIONS =======
     void setSamplerate(float samplerate)
     {
-        sr = samplerate;
+        sr = samplerate; // Assign to private member variable
 
         smoothDelaytime.reset(sr, 0.02f); // Set samplerate and smoothing of 20ms
         smoothDelaytime.setCurrentAndTargetValue(0.0); // will be overwritten
@@ -32,9 +32,9 @@ public:
 
     void setSize(float newSize)
     {
-        size = newSize;
-        buffer = new float[size];
-        for (int i = 0; i < size; i++)
+        size = newSize; // Assign to private member variable
+        buffer = new float[size]; // Buffer size
+        for (int i = 0; i < size; i++) // Iterate through size of buffer
         {
             buffer[i] = 0.0f;
         }
@@ -45,18 +45,19 @@ public:
         smoothDelaytime.setTargetValue(delTime);
         delayTimeInSamples = smoothDelaytime.getNextValue(); // Smoothed value
 
-        readPos = writePos - delayTimeInSamples;
-        while (readPos < 0)
-        readPos += size;
+        readPos = writePos - delayTimeInSamples; // Calculate delay
+        while (readPos < 0) 
+        readPos += size; // Calculate max. size
     }
     
-    void setFeedback(float fb)
+    void setFeedback(float fb) // Value between 0-1 if not running through tanh() or similar
     {
         smoothFeedback.setTargetValue(fb);
-        float smoothedFeedback = smoothFeedback.getNextValue();
-        feedback = smoothedFeedback;
+        float smoothedFeedback = smoothFeedback.getNextValue(); // Smoothed value
 
-        if (feedback > 10)
+        feedback = smoothedFeedback; // Assign to private member variable
+
+        if (feedback > 10) // Arbitrary protection
             feedback = 10.0f;
         if (feedback < 0)
             feedback = 0.0f;
@@ -81,17 +82,17 @@ public:
     // ====== UTILITY FUNCTIONS =======
     float readVal()
     {
-        float outVal = buffer[readPos];
-        readPos++;
-        readPos %= size;
+        float outVal = buffer[readPos]; // Output read position
+        readPos++; // Increment read position
+        readPos %= size; // Set read position relative to max size
         return outVal;
     }
 
     void writeVal(float inSamp)
     {
-        buffer[writePos] = inSamp;
-        writePos++;
-        writePos %= size;
+        buffer[writePos] = inSamp; // write into buffer
+        writePos++;  // Increment write position
+        writePos %= size; // Set write position relative to max size
     }
     
 private:
@@ -119,7 +120,7 @@ public:
     float kSProcess(float in)
     {
         in = dampen.processSingleSampleRaw(in); // Dampen Incoming Signal
-        in = process(in); // Use original processing
+        in = process(in); // Use original feedback delay processing
 
         return in;
     }

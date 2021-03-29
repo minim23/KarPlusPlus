@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="mfC8Ya" name="Assignment_3" projectType="audioplug" jucerVersion="5.4.6"
+<JUCERPROJECT id="mfC8Ya" name="Feedback Synth" projectType="audioplug" jucerVersion="5.4.6"
               pluginCharacteristicsValue="pluginIsSynth,pluginWantsMidiIn">
-  <MAINGROUP id="qQt5i4" name="Assignment_3">
+  <MAINGROUP id="qQt5i4" name="Feedback Synth">
     <GROUP id="{3BCDDF86-D967-72F5-2EE0-3721B97AF773}" name="Source">
       <FILE id="w8U1HZ" name="MySynthesiser.h" compile="0" resource="0" file="Source/MySynthesiser.h"/>
       <FILE id="vOurps" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
-      <FILE id="WznQD6" name="Limiter.h" compile="0" resource="0" file="Source/Limiter.h"/>
       <FILE id="YEukWY" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
       <FILE id="ctYH3d" name="PluginEditor.cpp" compile="1" resource="0"
