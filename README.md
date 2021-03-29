@@ -1,4 +1,4 @@
-# Audio-Programming_First-Plugin
+# KRMA
 
 ---
 
@@ -10,7 +10,7 @@
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [Project Title](#project-title)
+- [KRMA](#project-title)
 	- [What is this?](#what-is-this)
 		- [What does it look like](#what-does-it-look-like)
 	- [How Do you install it](#how-do-you-install-it)
@@ -21,9 +21,9 @@
 
 
 
-## What is this?
+## KRMA
 
-What does it do?
+KRMA is a simple polyphonic Synthesiser written in C++ with the JUCE Framework using the classic Karplus Strong Algorithm and resonant filtering in combination with non-linear transfer function. The transfer function allow for Feedback Values > 1.0 without Breakout, pushing the timbre into more distorted and broken territories.
 
 ### What does it look like
 
