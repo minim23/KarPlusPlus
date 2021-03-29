@@ -23,7 +23,7 @@
 
 ## What is this?
 
-What does it do?
+A simple Synthesiser written in C++ with the JUCE Framework using the classic Karplus Strong Algorithm and resonant filtering in combination with Non-linear transfer function. The transfer function allow for Feedback Values > 1.0 without Breakout, pushing the timbre into more distorted and broken territories.
 
 ### What does it look like
 
