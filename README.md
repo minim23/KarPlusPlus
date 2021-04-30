@@ -7,9 +7,9 @@ Kar++ is a simple polyphonic Synthesiser written in C++ with the JUCE Framework 
 ## Parameters
 
 Karplus Vol   - Volume of Karplus Strong
-Dampening     - Low Pass Filter on Impulse going into the Karplus Strong Algorithm
-Noise Sustain - Sustain Amount of Noise Impulse
-Tail          - Feedback Amount
+#Dampening     - Low Pass Filter on Impulse going into the Karplus Strong Algorithm
+#Noise Sustain - Sustain Amount of Noise Impulse
+#Tail          - Feedback Amount
 Instability   - Randomization of Delaytime resulting in a diffuse Pitch
 
 Resonator Vol - Volume of Resonant Feedback
