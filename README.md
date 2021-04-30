@@ -1,24 +1,3 @@
-# KRMA
-
----
-
-## TODO:
-
-- [ ] Add projucer file
-- [x] add `.gitignore`
-- [ ] check `.gitignore`
-
-<!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
-
-- [KRMA](#project-title)
-	- [What is this?](#what-is-this)
-		- [What does it look like](#what-does-it-look-like)
-	- [How Do you install it](#how-do-you-install-it)
-		- [What does it involve?](#what-does-it-involve)
-	- [References](#references)
-
-<!-- /TOC -->
-
 
 
 ## KRMA
