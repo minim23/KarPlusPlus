@@ -22,15 +22,7 @@ Release       - Release Amount of Envelope
   
 Volume        - Global Volume  
 
-## Install
-
-The .dll file can simple be dragged in your VST folder of any DAW.
-
-### Schematic
-
-![schematic](https://user-images.githubusercontent.com/59964078/116685111-bec3c400-a9a9-11eb-8feb-d1d4c0487348.png)
-
-### Demo
+## Demo
 
 https://soundcloud.com/minim23/krma-demo/s-SSv1u3iuS8X
 
