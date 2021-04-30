@@ -1,6 +1,6 @@
 
 
-## Kar++ - Feedback Synthesiser
+## Kar++ Feedback Synthesiser
 
 Kar++ is a simple polyphonic Synthesiser written in C++ with the JUCE Framework using the Karplus Strong Algorithm and resonant filtering in combination with a non-linear transfer function. The transfer function allow for Feedback Values > 1.0 without Breakout, pushing the timbre into more distorted and broken territories.
 
