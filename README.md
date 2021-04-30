@@ -28,7 +28,8 @@ https://soundcloud.com/minim23/krma-demo/s-SSv1u3iuS8X
 
 ## References
 
-For more information on the Karplus Strong Algorithm:
+For more information on the Karplus Strong Algorithm:  
+  
 [1] Karplus K., Strong A. "Digital Synthesis of Plucked-String and Drum Timbres", Computer Music Journal, 7, No. 2, The MIT Press, 1983.  
 [2] Jaffe, David A., and Julius O. Smith. “Extensions of the Karplus-Strong Plucked-String Algorithm.” Computer Music Journal 7, No. 2, 1983.  
 [3] Karjalainen, Matti, Vesa Valimaki, and Tero Tolonen. “Plucked-String Models: From the Karplus-Strong Algorithm to Digital Waveguides and Beyond.” Computer Music Journal 22, No. 3, 1998.  
