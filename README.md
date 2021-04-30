@@ -1,30 +1,42 @@
 
 
-## KRMA
+## Kar++ - Feedback Synthesiser
 
-KRMA is a simple polyphonic Synthesiser written in C++ with the JUCE Framework using the classic Karplus Strong Algorithm and resonant filtering in combination with non-linear transfer function. The transfer function allow for Feedback Values > 1.0 without Breakout, pushing the timbre into more distorted and broken territories.
+Kar++ is a simple polyphonic Synthesiser written in C++ with the JUCE Framework using the Karplus Strong Algorithm and resonant filtering in combination with a non-linear transfer function. The transfer function allow for Feedback Values > 1.0 without Breakout, pushing the timbre into more distorted and broken territories.
 
-## How do you install it?
+## Parameters
 
-The .dll file can simple be dragged in your VST folder of your DAW.
+Karplus Vol   - Volume of Karplus Strong
+Dampening     - Low Pass Filter on Impulse going into the Karplus Strong Algorithm
+Noise Sustain - Sustain Amount of Noise Impulse
+Tail          - Feedback Amount
+Instability   - Randomization of Delaytime resulting in a diffuse Pitch
 
-```sh
-git clone url
-```
+Resonator Vol - Volume of Resonant Feedback
+Delaytime     - Length of Buffer
+Q             - Resonance Amount
+Age           - Randomization of Delaytime resulting in a diffuse Pitch
+Detune        - Detune Amount between left and right channel
+Phase Offset  - Offsetting Phase between left and right channel
+Release       - Release Amount of Envelope
 
-### What does it involve?
+Volume        - Global Volume
 
-- Libraries
-- Concepts
-- Dependencies
+## Install
 
----
+The .dll file can simple be dragged in your VST folder of any DAW.
+
+### Schematic
+
+![schematic](https://user-images.githubusercontent.com/59964078/116685111-bec3c400-a9a9-11eb-8feb-d1d4c0487348.png)
+
+### Demo
+
+https://soundcloud.com/minim23/krma-demo/s-SSv1u3iuS8X
 
 ## References
 
-- List
-- Some Helpful
-- Websites
-
-[1]Digital Synthesis of Plucked-String and Drum Timbres
-Author(s): Kevin Karplus and Alex Strong
+For more information on the Karplus Strong Algorithm:
+[1] Karplus K., Strong A. "Digital Synthesis of Plucked-String and Drum Timbres", Computer Music Journal, 7, No. 2, The MIT Press, 1983. 
+[2] Jaffe, David A., and Julius O. Smith. “Extensions of the Karplus-Strong Plucked-String Algorithm.” Computer Music Journal 7, No. 2, 1983.
+[3] Karjalainen, Matti, Vesa Valimaki, and Tero Tolonen. “Plucked-String Models: From the Karplus-Strong Algorithm to Digital Waveguides and Beyond.” Computer Music Journal 22, No. 3, 1998.
