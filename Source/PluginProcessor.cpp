@@ -29,7 +29,7 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPEXCITATION", 1}, "Dampen Excitation", 0.0f, 1.0f, 0.5f),
         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPSTRING", 1}, "Dampen String", 0.0f, 1.0f, 0.5f),
         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"SUSTAIN", 1}, "Noise Sustain", 0.0f, 1.0f, 0.8f),
-        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"TAIL", 1}, "Tail", 0.0f, 0.99f, 0.9f),
+        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"TAIL", 1}, "Feedback", 0.0f, 1.0f, 0.9f),
         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"INSTABILITY", 1}, "Instability", 0.0f, 20.0f, 0.0f),
 
         std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"RELEASE", 1}, "Release", 0.0f, 10.0f, 5.0f),

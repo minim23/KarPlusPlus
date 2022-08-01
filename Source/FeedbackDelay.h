@@ -1,14 +1,14 @@
 #pragma once
 #include <cmath> // Used for tanh()
 
-class FeedbackDelay
+class Delay
 {
 public:
     
     // ====== CONSTRUCTOR / DESTRUCTOR =======
-    FeedbackDelay() {}
+    Delay() {}
     
-    virtual ~FeedbackDelay()
+    virtual ~Delay()
     {
         delete buffer;      // clean up when the object is destroyed to avoid memory leaks
     }
@@ -100,7 +100,7 @@ public:
     }
     
 protected:
-    float* buffer; // Buffer
+    float* buffer; // Pointer to a buffer - should be uniquePtr
     int size; // Buffer Size
     
     int writePos = 0;  // Write Position

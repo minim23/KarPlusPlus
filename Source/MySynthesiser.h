@@ -104,9 +104,13 @@ public:
         // ====== MIDI TO FREQ =======
         freq = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
 
-        // ====== DAMPENING =======
+        // ====== EXCITATION =======
         excitation.setDampening(*dampExAmount);
         excitation.setDampening(*dampExAmount);
+        
+        // ====== STRING =======
+        karplusStrongLeft.setAllpass(random.nextFloat(), random.nextFloat());
+        karplusStrongRight.setAllpass(random.nextFloat(), random.nextFloat());
         
         karplusStrongLeft.setDampening(*dampStringAmount);
         karplusStrongRight.setDampening(*dampStringAmount);

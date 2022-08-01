@@ -1,9 +1,10 @@
 #pragma once
 #include "FeedbackDelay.h"
+#include "NonLinAllpass.h"
 #include <cmath> // Used for tanh()
 
 // ====== KARPLUS STRONG =======
-class KarplusStrong : public FeedbackDelay
+class KarplusStrong : public Delay
 {
 public:
     // ====== PROCESS =======
@@ -12,7 +13,8 @@ public:
         float outVal = readVal();
         writeVal(inSamp + feedback * outVal); // Feedback scales output back into input
         float floor(outVal); // Calculate interpolation
-        return floor;
+        float dampString = dampen.processSingleSampleRaw(floor); // process through IRR Filter
+        return dampString;
     }
 
     // ====== DAMPENING =======
@@ -23,6 +25,12 @@ public:
                             * 0.9; // Get practical value
 
         dampen.setCoefficients(juce::IIRCoefficients::makeLowPass(getSamplerate(), filterFreq, 1.0f));
+    }
+    
+    // ====== ALLPASS COEFFS =======
+    void setAllpass(float coeff1, float coeff2) // Takes values between 0-1
+    {
+        allpass.setCoefficients(coeff1, coeff2);
     }
 
     // ====== PITCH WITH INSTABILITY =======
@@ -37,4 +45,6 @@ public:
 private:
     juce::IIRFilter dampen;
     juce::Random random;
+    
+    NonLinearAllpass allpass;
 };
