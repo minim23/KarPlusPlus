@@ -62,20 +62,12 @@ private:
 
     // Parameter Setup
     juce::AudioProcessorValueTreeState parameters;
-    std::atomic<float>* karplusVolParam;
+    std::atomic<float>* dampExParam;
 
-    std::atomic<float>* dampParam;
+    std::atomic<float>* dampStringParam;
     std::atomic<float>* sustainParam;
     std::atomic<float>* tailParam;
     std::atomic<float>* instabilityParam;
-
-    std::atomic<float>* detuneParam;
-
-    std::atomic<float>* feedbackParam;
-    std::atomic<float>* delaytimeParam;
-    std::atomic<float>* qParam;
-    std::atomic<float>* feedbackAgeParam;
-    std::atomic<float>* offsetParam;
 
     std::atomic<float>* releaseParam;
     std::atomic<float>* volumeParam;

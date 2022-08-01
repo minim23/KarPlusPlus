@@ -1,5 +1,7 @@
 #pragma once
-#include "FeedbackDelay.h"
+#include "StringModel.h"
+#include "Excitation.h"
+#include "ADSR.h"
 
 // ===========================
 // ===========================
@@ -35,35 +37,23 @@ public:
     // ====== INITIALIZATE PARAMETER POINTERS =======
     void setParameterPointers(
 
-    std::atomic<float>* karplusVolIn,
-    std::atomic<float>* dampIn,
+    std::atomic<float>* dampExIn,
+                              
+    std::atomic<float>* dampStringIn,
     std::atomic<float>* sustainIn,
     std::atomic<float>* tailIn,
     std::atomic<float>* instabilityIn,
-
-    std::atomic<float>* feedbackIn,
-    std::atomic<float>* delayTimeIn,
-    std::atomic<float>* qIn,
-    std::atomic<float>* feedbackAgeIn,
-    std::atomic<float>* detuneIn,
-    std::atomic<float>* offsetIn,
 
     std::atomic<float>* releaseIn,
     std::atomic<float>* volumeIn
     )
     {
-        karplusVolAmount = karplusVolIn;
-        dampAmount = dampIn;
+        dampExAmount = dampExIn;
+        
+        dampStringAmount = dampStringIn;
         sustain = sustainIn;
         tailAmount = tailIn;
         instabilityAmount = instabilityIn;
-
-        feedbackAmount = feedbackIn;
-        delayTime = delayTimeIn;
-        qAmount = qIn;
-        feedbackAgeAmount = feedbackAgeIn;
-        detuneAmount = detuneIn;
-        offsetAmount = offsetIn;
 
         release = releaseIn;
         volume = volumeIn;
@@ -87,25 +77,12 @@ public:
         // ====== KARPLUS STRONG SETUP =======
         karplusStrongLeft.setSamplerate(sr);
         karplusStrongRight.setSamplerate(sr);
-        karplusStrongLeft.setSize(sr * 10); // Practical delay size - possibly too big
-        karplusStrongRight.setSize(sr * 10);
-
-        // ====== RESONANT FEEDBACK SETUP =======
-        resFeedbackLeft.setSamplerate(sr);
-        resFeedbackLeft.resonatorSetup(); // Gets samplerate from function above - could possibly be simplified or improved
-        resFeedbackLeft.setSize(sr * 30); // Practical delay size
-
-        resFeedbackRight.setSamplerate(sr);
-        resFeedbackRight.resonatorSetup();
-        resFeedbackRight.setSize(sr * 30);
-
-        // ====== VOLUME SMOOTHING SETUP =======
-        smoothKarplusVol.reset(sr, 0.2f); // Smoothed value of 200ms
-        smoothKarplusVol.setCurrentAndTargetValue(0.0);
-
-        smoothFeedbackVol.reset(sr, 0.2f); // Smoothed value of 200ms
-        smoothFeedbackVol.setCurrentAndTargetValue(0.0);
-
+        karplusStrongLeft.setSize(sr * 1); // Delay size of 1000ms
+        karplusStrongRight.setSize(sr * 1);
+        
+        // ====== EXCITATION SETUP =======
+        excitation.setSamplerate(sr);
+        
         globalVol.reset(sr, 0.02f); // Smoothed value of 20ms
         globalVol.setCurrentAndTargetValue(0.0);
     }
@@ -128,17 +105,22 @@ public:
         freq = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
 
         // ====== DAMPENING =======
-        karplusStrongLeft.setDampening(*dampAmount);
-        karplusStrongRight.setDampening(*dampAmount);
+        excitation.setDampening(*dampExAmount);
+        excitation.setDampening(*dampExAmount);
+        
+        karplusStrongLeft.setDampening(*dampStringAmount);
+        karplusStrongRight.setDampening(*dampStringAmount);
+        
+
 
         // ====== FORMANT COEFFICIENTS =======   
         for (int i = 0; i < formantAmount; i++)
         {
-            float maxRandFreq = *dampAmount // Get relative value
+            float maxRandFreq = *dampExAmount // Get relative value
                                 * 1000 // Max. Freq for ranomization of filters
                                 + 1; // Next Int can not be 0
 
-            float maxFreq = *dampAmount // Get relative value
+            float maxFreq = *dampExAmount // Get relative value
                             * 4000 // Rough max. Freq
                             + 100; // Absolute min. Freq
 
@@ -193,50 +175,32 @@ public:
         {
             // ====== ENVELOPE SETUP =======
             // ====== GLOBAL =======
-            juce::ADSR::Parameters envParams;
-            envParams.attack = 0.1;
-            envParams.decay = 0.25;
-            envParams.sustain = 1.0f;
-            envParams.release = *release + 0.1f; // Make sure to end after feedback release
+            juce::ADSR::Parameters envParams (0.1, 0.25, 1.0f, *release + 0.1f); // Make sure to end after feedback release
             env.setParameters(envParams);
 
-            // ====== FEEDBACK =======
-            juce::ADSR::Parameters feedbackParams;
-            feedbackParams.attack = 0.1;
-            feedbackParams.decay = 0.25;
-            feedbackParams.sustain = 0.9f;
-            feedbackParams.release = *release + 0.01f;
-            feedbackEnv.setParameters(feedbackParams);
-
             // ====== IMPULSE =======
-            juce::ADSR::Parameters impulseParams;
-            impulseParams.attack = 0.01f;
-            impulseParams.decay = 0.1f;
-            impulseParams.sustain = *sustain * 0.3;
-            impulseParams.release = *release + 0.01f;
+            juce::ADSR::Parameters impulseParams (0.01f, 0.1f, *sustain * 0.3, *release + 0.01f);
             impulseEnv.setParameters(impulseParams);
+        
 
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
-            {               
-                // ====== SMOOTHED VOLUMES =======
-                smoothFeedbackVol.setTargetValue(*feedbackAmount); // Resonant Feedback Volume
-                float smoothedFeedbackVol = smoothFeedbackVol.getNextValue();
-
-                smoothKarplusVol.setTargetValue(*karplusVolAmount); // Karplus Strong Volume
-                float smoothedKarplusVol = smoothKarplusVol.getNextValue();
-
+            {
+                
+                // ====== SMOOTHED VOLUME =======
                 globalVol.setTargetValue(*volume); // Output Volume
                 float smoothedGlobalVol = globalVol.getNextValue();
 
                 // ====== ENVELOPE VALUES =======
                 float envVal = env.getNextSample(); // Global envelope
                 float impulseVal = impulseEnv.getNextSample(); // White Noise envelope
-                float feedbackVal = feedbackEnv.getNextSample(); // Resonant Feedback envelope
+                
+                // ====== EXCITATION =======
+                float impulse = excitation.process();
                
                 // ====== IMPULSE =======
-                float exciterLeft = random.nextFloat() * impulseVal; // Enveloped White Noise
-                float exciterRight = random.nextFloat() * impulseVal;
+                float exciterLeft = impulse * impulseVal; // Enveloped White Noise
+                float exciterRight = impulse * impulseVal;
 
                 // ====== FORMANTS =======
                 float exColourLeft = 0.0f; // Setting up colouration - for some reason it sounded differently when exciter was assigned to formants directly
@@ -261,30 +225,15 @@ public:
                 
                 // ====== KARPLUS STRONG =======
                 karplusStrongLeft.setPitch(freq, *instabilityAmount);
-                karplusStrongRight.setPitch(freq + *detuneAmount, *instabilityAmount); // Detuning between left and right channel
+                karplusStrongRight.setPitch(freq, *instabilityAmount); // Detuning between left and right channel
 
                 karplusStrongLeft.setFeedback(*tailAmount); // Feedback between 0-1
                 karplusStrongRight.setFeedback(*tailAmount);
-
-                // ====== RESONANT FEEDBACK =======              
-                float age = 1 - (*feedbackAgeAmount * random.nextFloat()); // Feedback Colour (Randomization of Delaytime)
-                float delayt = (*delayTime * (sr / 20)) * age; // Delaytime set to an arbitrary, functional value - initially this was set to get ms - multiplied by Feedback Colour 
-                float offset = *offsetAmount * (freq / 2); // Phasing up to 180*
-
-                resFeedbackLeft.setDelayTimeInSamples(delayt + 100 + offset); // Slight offset of left and right channel with control of phasing
-                resFeedbackLeft.setResonator(freq, *qAmount);
-                resFeedbackLeft.setFeedback(*feedbackAmount * feedbackVal); // Envelope controlling Feedback amount relative to maximum volume
-
-                resFeedbackRight.setDelayTimeInSamples(delayt + 100);
-                resFeedbackRight.setResonator(freq + *detuneAmount, *qAmount); // Detuning between left and right channel
-                resFeedbackRight.setFeedback(*feedbackAmount * feedbackVal);
                 
                 // ====== SAMPLE PROCESSING CHAIN =======
-                float currentSampleLeft = karplusStrongLeft.kSProcess(exciterLeft) * smoothedKarplusVol // Karplus Strong Volume
-                                        + (resFeedbackLeft.process(karplusStrongLeft.process(exciterRight)) * smoothedFeedbackVol); // Resonant Feedback Volume - KS inserted
+                float currentSampleLeft = karplusStrongLeft.process(exciterLeft); // Karplus Strong Volume
 
-                float currentSampleRight = karplusStrongRight.kSProcess(exciterRight) * smoothedKarplusVol
-                                           + (resFeedbackRight.process(karplusStrongRight.process(exciterLeft)) * smoothedFeedbackVol);
+                float currentSampleRight = karplusStrongRight.process(exciterRight);
                 
                 // ====== GLOBAL ENVELOPE AND VOLUME =======
                 currentSampleLeft = currentSampleLeft
@@ -331,39 +280,30 @@ private:
     bool ending = false;
 
     // ====== PARAMETER VALUES ======= 
-    std::atomic<float>* karplusVolAmount;
-
-    std::atomic<float>* dampAmount;
+    std::atomic<float>* dampExAmount;
+    std::atomic<float>* dampStringAmount;
     std::atomic<float>* room;
     std::atomic<float>* sustain;
     std::atomic<float>* tailAmount;
     std::atomic<float>* instabilityAmount;
 
-    std::atomic<float>* feedbackAmount;
-    std::atomic<float>* delayTime;
-    std::atomic<float>* qAmount;
-    std::atomic<float>* feedbackAgeAmount;
-    std::atomic<float>* detuneAmount;
-    std::atomic<float>* offsetAmount;
-
     std::atomic<float>* release;
     std::atomic<float>* volume;
 
     // ====== ENVELOPES =======   
-    juce::ADSR env, impulseEnv, feedbackEnv;
+    //juce::ADSR env, impulseEnv, feedbackEnv;
+    ADSRData env, impulseEnv, feedbackEnv;
+    // ADSRData adsr;
 
     // ====== IMPULSE =======   
-    juce::Random random; // for White Noise
+    juce::Random random; // for Filterbank
     juce::OwnedArray<juce::IIRFilter> formantsLeft, formantsRight;
     int formantAmount = 20;
+    
+    Excitation excitation;
 
-    // ====== KARPLUS STRONG =======   
-    juce::SmoothedValue<float> smoothKarplusVol;
+    // ====== KARPLUS STRONG =======
     KarplusStrong karplusStrongLeft, karplusStrongRight;
-
-    // ====== FEEDBACK RESONATOR =======   
-    juce::SmoothedValue<float> smoothFeedbackVol;
-    ResonantFeedback resFeedbackLeft, resFeedbackRight;
 
     // ====== GLOBAL VOLUME =======   
     juce::SmoothedValue<float> globalVol;
