@@ -16,20 +16,20 @@
 //==============================================================================
 /**
 */
-class Assignment_3AudioProcessorEditor  : public AudioProcessorEditor
+class KarPlusPlus2AudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
-    Assignment_3AudioProcessorEditor (Assignment_3AudioProcessor&);
-    ~Assignment_3AudioProcessorEditor();
+    KarPlusPlus2AudioProcessorEditor (KarPlusPlus2AudioProcessor&);
+    ~KarPlusPlus2AudioProcessorEditor();
 
     //==============================================================================
-    void paint (Graphics&) override;
+    void paint (juce::Graphics&) override;
     void resized() override;
 
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
-    Assignment_3AudioProcessor& processor;
+    KarPlusPlus2AudioProcessor& processor;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Assignment_3AudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (KarPlusPlus2AudioProcessorEditor)
 };

@@ -7,7 +7,11 @@ public:
     
     // ====== CONSTRUCTOR / DESTRUCTOR =======
     FeedbackDelay() {}
-    ~FeedbackDelay() {}
+    
+    ~FeedbackDelay()
+    {
+        delete buffer;      // clean up when the object is destroyed to avoid memory leaks
+    }
 
     // ====== STANDART PROCESS THAT CAN BE REPLACED OR RE-USED =======
     virtual float process(float inSamp)
@@ -106,7 +110,7 @@ private:
     
     float feedback = 0.0f; 
 
-    SmoothedValue<float> smoothDelaytime, smoothFeedback;;
+    juce::SmoothedValue<float> smoothDelaytime, smoothFeedback;;
 
     int sr; // Samplerate
     
@@ -132,7 +136,7 @@ public:
                             * (getSamplerate() / 2)  // Multiplies dampening by Nyquist Frequency
                             * 0.9; // Get practical value   
 
-        dampen.setCoefficients(IIRCoefficients::makeLowPass(getSamplerate(), filterFreq, 1.0f));
+        dampen.setCoefficients(juce::IIRCoefficients::makeLowPass(getSamplerate(), filterFreq, 1.0f));
     }
 
     // ====== PITCH WITH INSTABILITY =======
@@ -145,8 +149,8 @@ public:
     }
 
 private:
-    IIRFilter dampen;
-    Random random;
+    juce::IIRFilter dampen;
+    juce::Random random;
 };
 
 // ====== RESONANT FEEDBACK =======
@@ -166,7 +170,7 @@ public:
         smoothQ.setTargetValue(q);
         float smoothedQ = smoothQ.getNextValue(); // Smoothed resonance value
 
-        resonator.setCoefficients(IIRCoefficients::makeBandPass(getSamplerate(), freq, smoothedQ + 0.01)); // Make sure to have samplerate set
+        resonator.setCoefficients(juce::IIRCoefficients::makeBandPass(getSamplerate(), freq, smoothedQ + 0.01)); // Make sure to have samplerate set
 
         resGain = 1 + (q / 10); // Define Gainstage to equally increase the Volume with rising Q Value
     }
@@ -189,10 +193,10 @@ public:
     }
 
 private:
-    IIRFilter resonator;
-    SmoothedValue<float> smoothQ;
+    juce::IIRFilter resonator;
+    juce::SmoothedValue<float> smoothQ;
     float resGain;
 
-    Random random;
+    juce::Random random;
 };
 

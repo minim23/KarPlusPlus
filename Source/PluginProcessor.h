@@ -16,12 +16,12 @@
 //==============================================================================
 /**
 */
-class Assignment_3AudioProcessor : public AudioProcessor
+class KarPlusPlus2AudioProcessor : public juce::AudioProcessor
 {
 public:
     //==============================================================================
-    Assignment_3AudioProcessor();
-    ~Assignment_3AudioProcessor();
+    KarPlusPlus2AudioProcessor();
+    ~KarPlusPlus2AudioProcessor();
 
     //==============================================================================
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
@@ -31,14 +31,14 @@ public:
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 #endif
 
-    void processBlock(AudioBuffer<float>&, MidiBuffer&) override;
+    void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==============================================================================
-    AudioProcessorEditor* createEditor() override;
+    juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
 
     //==============================================================================
-    const String getName() const override;
+    const juce::String getName() const override;
 
     bool acceptsMidi() const override;
     bool producesMidi() const override;
@@ -49,19 +49,19 @@ public:
     int getNumPrograms() override;
     int getCurrentProgram() override;
     void setCurrentProgram(int index) override;
-    const String getProgramName(int index) override;
-    void changeProgramName(int index, const String& newName) override;
+    const juce::String getProgramName(int index) override;
+    void changeProgramName(int index, const juce::String& newName) override;
 
     //==============================================================================
-    void getStateInformation(MemoryBlock& destData) override;
+    void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
 private:
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Assignment_3AudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(KarPlusPlus2AudioProcessor)
 
     // Parameter Setup
-    AudioProcessorValueTreeState parameters;
+    juce::AudioProcessorValueTreeState parameters;
     std::atomic<float>* karplusVolParam;
 
     std::atomic<float>* dampParam;
@@ -81,6 +81,6 @@ private:
     std::atomic<float>* volumeParam;
 
     // Synthesiser class
-    Synthesiser synth;
+    juce::Synthesiser synth;
     int voiceCount = 16;
 };

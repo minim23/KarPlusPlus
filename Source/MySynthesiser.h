@@ -4,7 +4,7 @@
 // ===========================
 // ===========================
 // SOUND
-class MySynthSound : public SynthesiserSound
+class MySynthSound : public juce::SynthesiserSound
 {
 public:
     bool appliesToNote      (int) override      { return true; }
@@ -27,7 +27,7 @@ public:
  @namespace none
  @updated 2019-06-18
  */
-class MySynthVoice : public SynthesiserVoice
+class MySynthVoice : public juce::SynthesiserVoice
 {
 public:
     MySynthVoice() {}
@@ -74,8 +74,8 @@ public:
     {       
         for (int i = 0; i < formantAmount; i++)
         {
-            formantsLeft.add(new IIRFilter());      
-            formantsRight.add(new IIRFilter());
+            formantsLeft.add(new juce::IIRFilter());
+            formantsRight.add(new juce::IIRFilter());
         }
     }
 
@@ -119,13 +119,13 @@ public:
      @param SynthesiserSound unused variable
      @param / unused variable
      */
-    void startNote(int midiNoteNumber, float velocity, SynthesiserSound*, int /*currentPitchWheelPosition*/) override
+    void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound*, int /*currentPitchWheelPosition*/) override
     {
         playing = true;
         ending = false;
 
         // ====== MIDI TO FREQ =======
-        freq = MidiMessage::getMidiNoteInHertz(midiNoteNumber);
+        freq = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
 
         // ====== DAMPENING =======
         karplusStrongLeft.setDampening(*dampAmount);
@@ -142,8 +142,8 @@ public:
                             * 4000 // Rough max. Freq
                             + 100; // Absolute min. Freq
 
-            formantsLeft[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
-            formantsRight[i]->setCoefficients(IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
+            formantsLeft[i]->setCoefficients(juce::IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
+            formantsRight[i]->setCoefficients(juce::IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
         }
 
         // ====== TRIGGER ENVELOPES =======
@@ -187,13 +187,13 @@ public:
      */
 
      // ====== DSP BLOCK =======
-    void renderNextBlock(AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override
+    void renderNextBlock(juce::AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override
     {
         if (playing) // check to see if this voice should be playing
         {
             // ====== ENVELOPE SETUP =======
             // ====== GLOBAL =======
-            ADSR::Parameters envParams;
+            juce::ADSR::Parameters envParams;
             envParams.attack = 0.1;
             envParams.decay = 0.25;
             envParams.sustain = 1.0f;
@@ -201,7 +201,7 @@ public:
             env.setParameters(envParams);
 
             // ====== FEEDBACK =======
-            ADSR::Parameters feedbackParams;
+            juce::ADSR::Parameters feedbackParams;
             feedbackParams.attack = 0.1;
             feedbackParams.decay = 0.25;
             feedbackParams.sustain = 0.9f;
@@ -209,7 +209,7 @@ public:
             feedbackEnv.setParameters(feedbackParams);
 
             // ====== IMPULSE =======
-            ADSR::Parameters impulseParams;
+            juce::ADSR::Parameters impulseParams;
             impulseParams.attack = 0.01f;
             impulseParams.decay = 0.1f;
             impulseParams.sustain = *sustain * 0.3;
@@ -320,7 +320,7 @@ public:
     //--------------------------------------------------------------------------
     void controllerMoved(int, int) override {}
     //--------------------------------------------------------------------------
-    bool canPlaySound(SynthesiserSound* sound) override
+    bool canPlaySound(juce::SynthesiserSound* sound) override
     {
         return dynamic_cast<MySynthSound*> (sound) != nullptr;
     }
@@ -350,23 +350,23 @@ private:
     std::atomic<float>* volume;
 
     // ====== ENVELOPES =======   
-    ADSR env, impulseEnv, feedbackEnv;
+    juce::ADSR env, impulseEnv, feedbackEnv;
 
     // ====== IMPULSE =======   
-    Random random; // for White Noise
-    OwnedArray<IIRFilter> formantsLeft, formantsRight;
+    juce::Random random; // for White Noise
+    juce::OwnedArray<juce::IIRFilter> formantsLeft, formantsRight;
     int formantAmount = 20;
 
     // ====== KARPLUS STRONG =======   
-    SmoothedValue<float> smoothKarplusVol;
+    juce::SmoothedValue<float> smoothKarplusVol;
     KarplusStrong karplusStrongLeft, karplusStrongRight;
 
     // ====== FEEDBACK RESONATOR =======   
-    SmoothedValue<float> smoothFeedbackVol;
+    juce::SmoothedValue<float> smoothFeedbackVol;
     ResonantFeedback resFeedbackLeft, resFeedbackRight;
 
     // ====== GLOBAL VOLUME =======   
-    SmoothedValue<float> globalVol;
+    juce::SmoothedValue<float> globalVol;
 
     // ====== UTILITY =======   
     float freq; // Frequency of Synth
