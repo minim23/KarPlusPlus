@@ -74,7 +74,7 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
     for (int i = 0; i < voiceCount; i++)
     {
     MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i));
-    v->setFormants();
+    v->formants.setFormants();
     }
 }
 

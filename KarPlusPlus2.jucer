@@ -16,6 +16,7 @@
       <FILE id="X9DoZV" name="StringModel.h" compile="0" resource="0" file="Source/StringModel.h"/>
       <FILE id="cwcJQM" name="ADSR.h" compile="0" resource="0" file="Source/ADSR.h"/>
       <FILE id="oxZzjO" name="Excitation.h" compile="0" resource="0" file="Source/Excitation.h"/>
+      <FILE id="uV0mQH" name="Filterbank.h" compile="0" resource="0" file="Source/Filterbank.h"/>
       <FILE id="xT4c43" name="NonLinAllpass.h" compile="0" resource="0" file="Source/NonLinAllpass.h"/>
     </GROUP>
   </MAINGROUP>

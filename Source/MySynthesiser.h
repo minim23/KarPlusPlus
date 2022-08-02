@@ -2,6 +2,7 @@
 #include "StringModel.h"
 #include "Excitation.h"
 #include "ADSR.h"
+#include "Filterbank.h"
 
 // ===========================
 // ===========================
@@ -59,15 +60,14 @@ public:
         volume = volumeIn;
     }
 
-    // ====== SETUP FORMANTS =======
-    void setFormants()
-    {       
-        for (int i = 0; i < formantAmount; i++)
-        {
-            formantsLeft.add(new juce::IIRFilter());
-            formantsRight.add(new juce::IIRFilter());
-        }
-    }
+//    // ====== SETUP FORMANTS =======
+//    void setFormants()
+//    {
+//        for (int i = 0; i < formantAmount; i++)
+//        {
+//            formants.add(new juce::IIRFilter());
+//        }
+//    }
 
     // ====== SAMPLERATE SETUP FOR PREPARE TO PLAY =======
     void prepareToPlay(int sampleRate)
@@ -75,13 +75,14 @@ public:
         sr = sampleRate;
 
         // ====== KARPLUS STRONG SETUP =======
-        karplusStrongLeft.setSamplerate(sr);
-        karplusStrongRight.setSamplerate(sr);
-        karplusStrongLeft.setSize(sr * 1); // Delay size of 1000ms
-        karplusStrongRight.setSize(sr * 1);
+        karplusStrong.setSamplerate(sr);
+        karplusStrong.setSize(sr * 1); // Delay size of 1000ms
         
         // ====== EXCITATION SETUP =======
         excitation.setSamplerate(sr);
+        
+        // ====== FORMANTS SETUP =======
+        formants.setSamplerate(sr);
         
         globalVol.reset(sr, 0.02f); // Smoothed value of 20ms
         globalVol.setCurrentAndTargetValue(0.0);
@@ -111,28 +112,12 @@ public:
         excitation.setDampening(*dampExAmount);
         
         // ====== STRING =======
-        karplusStrongLeft.setAllpass(random.nextFloat(), random.nextFloat());
-        karplusStrongRight.setAllpass(random.nextFloat(), random.nextFloat());
-        
-        karplusStrongLeft.setDampening(*dampStringAmount);
-        karplusStrongRight.setDampening(*dampStringAmount);
-        
+        karplusStrong.setAllpass(random.nextFloat(), random.nextFloat());
+        karplusStrong.setDampening(*dampStringAmount);
 
-
-        // ====== FORMANT COEFFICIENTS =======   
-        for (int i = 0; i < formantAmount; i++)
-        {
-            float maxRandFreq = *dampExAmount // Get relative value
-                                * 1000 // Max. Freq for ranomization of filters
-                                + 1; // Next Int can not be 0
-
-            float maxFreq = *dampExAmount // Get relative value
-                            * 4000 // Rough max. Freq
-                            + 100; // Absolute min. Freq
-
-            formantsLeft[i]->setCoefficients(juce::IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
-            formantsRight[i]->setCoefficients(juce::IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
-        }
+        // ====== FORMANT COEFFICIENTS =======
+        auto& dampEx = *dampExAmount; // De-reference pointer
+        formants.setCoeff(dampEx); // Insert de-referenced value
 
         // ====== TRIGGER ENVELOPES =======
         generalADSR.reset(); // clear out envelope before re-triggering it
@@ -158,17 +143,12 @@ public:
 
         ending = true;
     }
-
-    //--------------------------------------------------------------------------
-    /**
-     The Main DSP Block: Put My DSP code in here
-
-     If the sound that the voice is playing finishes during the course of this rendered block, it must call clearCurrentNote(), to tell the synthesiser that it has finished
-
-     @param outputBuffer pointer to output
-     @param startSample position of first sample in buffer
-     @param numSamples number of smaples in output buffer
-     */
+    
+//    /// New method to update ADSR values
+//    void SynthVoice::update (const float attack, const float decay, const float sustain, const float release)
+//    {
+//      // Separate method to call ADSR in process block
+//    }
 
      // ====== DSP BLOCK =======
     void renderNextBlock(juce::AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override
@@ -180,7 +160,6 @@ public:
             if (! isVoiceActive()) // If Voice is silent, return without doing anything
                 return;
             
-            
             // ====== ADSR =======
             generalADSR.updateADSR (0.1, 0.25, 1.0f, *release + 0.1f); // Make sure to end after feedback release
             impulseADSR.updateADSR (0.01f, 0.1f, *sustain * 0.3, *release + 0.01f);
@@ -188,7 +167,6 @@ public:
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
             {
-                
                 // ====== SMOOTHED VOLUME =======
                 globalVol.setTargetValue(*volume); // Output Volume
                 float smoothedGlobalVol = globalVol.getNextValue();
@@ -198,68 +176,33 @@ public:
                 float impulseVal = impulseADSR.getNextSample(); // White Noise envelope
                 
                 // ====== EXCITATION =======
-                float impulse = excitation.process();
-               
-                // ====== IMPULSE =======
-                float exciterLeft = impulse * impulseVal; // Enveloped White Noise
-                float exciterRight = impulse * impulseVal;
+                float impulse = excitation.process() * impulseVal; // Enveloped White Noise
 
                 // ====== FORMANTS =======
-                float exColourLeft = 0.0f; // Setting up colouration - for some reason it sounded differently when exciter was assigned to formants directly
-                float exColourRight = 0.0f;
-
-                for (auto* formant : formantsLeft) // Process Impulse through array of randomized Bandpass Filters on left and right channel
-                {
-                     exColourLeft = formant->processSingleSampleRaw(exciterLeft);
-                }
-                for (auto* formant : formantsRight)
-                {
-                    exColourRight = formant->processSingleSampleRaw(exciterRight);
-                }
-                    
-                exciterLeft = exColourLeft // Take formanted impulse
-                              / formantAmount // Adjust volume relative to formant amount
-                              * sqrt(formantAmount); // Adjust volume relative to resonance of filter - normally this should be square root of Q, but this did not seem practical
-                                 
-                exciterRight = exColourRight
-                              / formantAmount
-                              * sqrt(formantAmount);
+                formants.process(impulse);
                 
                 // ====== KARPLUS STRONG =======
-                karplusStrongLeft.setPitch(freq, *instabilityAmount);
-                karplusStrongRight.setPitch(freq, *instabilityAmount); // Detuning between left and right channel
-
-                karplusStrongLeft.setFeedback(*tailAmount); // Feedback between 0-1
-                karplusStrongRight.setFeedback(*tailAmount);
+                karplusStrong.setPitch (freq, *instabilityAmount);
+                karplusStrong.setFeedback (*tailAmount); // Feedback between 0-1
                 
                 // ====== SAMPLE PROCESSING CHAIN =======
-                float currentSampleLeft = karplusStrongLeft.process(exciterLeft); // Karplus Strong Volume
-
-                float currentSampleRight = karplusStrongRight.process(exciterRight);
+                float currentSample = karplusStrong.process (impulse); // Karplus Strong Volume
                 
                 // ====== GLOBAL ENVELOPE AND VOLUME =======
-                currentSampleLeft = currentSampleLeft
+                currentSample = currentSample
                                     * envVal // Global envelope
                                     * smoothedGlobalVol * smoothedGlobalVol * smoothedGlobalVol; // Exponential output control for volume adjustment
-                currentSampleRight = currentSampleRight
-                                    * envVal
-                                    * smoothedGlobalVol * smoothedGlobalVol * smoothedGlobalVol;
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
                 {
-                    outputBuffer.addSample(0, sampleIndex, currentSampleLeft); // Left Channel
-                    outputBuffer.addSample(1, sampleIndex, currentSampleRight); // Right Channel
-                }
-
-                // ====== END SOUND =======
-                if (ending)
-                {
-                    if (envVal < 0.0001f) // Clear note if envelope value is very low
-                    {
+                    outputBuffer.addSample (chan, sampleIndex, currentSample);
+                    
+                    // DO SOME HAAS MAGIC HERE
+                    
+                    // if adsr is not active, clear current note
+                    if (! generalADSR.isActive())
                         clearCurrentNote();
-                        playing = false;
-                    }
                 }
             }
                     
@@ -276,10 +219,17 @@ public:
         return dynamic_cast<MySynthSound*> (sound) != nullptr;
     }
     //--------------------------------------------------------------------------
+    
+    // Needs to be public
+    Formants formants;
+    
 private:
     // ====== NOTE ON/OFF =======   
     bool playing = false;
     bool ending = false;
+    
+    // ====== JASSERTS =======
+    bool isPrepared { false };
 
     // ====== PARAMETER VALUES ======= 
     std::atomic<float>* dampExAmount;
@@ -295,20 +245,20 @@ private:
     // ====== ENVELOPES =======
     ADSRData generalADSR, impulseADSR;
 
-    // ====== IMPULSE =======   
-    juce::Random random; // for Filterbank
-    juce::OwnedArray<juce::IIRFilter> formantsLeft, formantsRight;
-    int formantAmount = 20;
-    
+    // ====== IMPULSE =======
     Excitation excitation;
+    
+    // ====== FILTERBANK =======
+    juce::Random random; // for Filterbank
+//    juce::OwnedArray<juce::IIRFilter> formants;
+//    float exColour = 0.0f; // Setting up colouration - for some reason it sounded differently when exciter was assigned to formants directly
+//    int formantAmount = 6;
 
     // ====== KARPLUS STRONG =======
-    KarplusStrong karplusStrongLeft, karplusStrongRight;
+    KarplusStrong karplusStrong;
 
     // ====== GLOBAL VOLUME =======   
     juce::SmoothedValue<float> globalVol;
-    
-    bool isPrepared { false }; 
 
     // ====== UTILITY =======   
     float freq; // Frequency of Synth
