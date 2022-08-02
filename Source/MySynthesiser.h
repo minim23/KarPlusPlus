@@ -70,7 +70,7 @@ public:
     }
 
     // ====== SAMPLERATE SETUP FOR PREPARE TO PLAY =======
-    void init(int sampleRate)
+    void prepareToPlay(int sampleRate)
     {
         sr = sampleRate;
 
@@ -85,6 +85,8 @@ public:
         
         globalVol.reset(sr, 0.02f); // Smoothed value of 20ms
         globalVol.setCurrentAndTargetValue(0.0);
+        
+        isPrepared = true;
     }
     
     //--------------------------------------------------------------------------
@@ -133,14 +135,11 @@ public:
         }
 
         // ====== TRIGGER ENVELOPES =======
-        env.reset(); // clear out envelope before re-triggering it
-        env.noteOn(); // start envelope
+        generalADSR.reset(); // clear out envelope before re-triggering it
+        generalADSR.noteOn(); // start envelope
 
-        impulseEnv.reset();
-        impulseEnv.noteOn();
-
-        feedbackEnv.reset();
-        feedbackEnv.noteOn();
+        impulseADSR.reset();
+        impulseADSR.noteOn();
 
     }
     //--------------------------------------------------------------------------
@@ -154,9 +153,8 @@ public:
     void stopNote(float /*velocity*/, bool allowTailOff) override
     {
         // ====== TRIGGER OFF ENVELOPES =======
-        env.noteOff();
-        impulseEnv.noteOff();
-        feedbackEnv.noteOff();
+        generalADSR.noteOff();
+        impulseADSR.noteOff();
 
         ending = true;
     }
@@ -177,15 +175,15 @@ public:
     {
         if (playing) // check to see if this voice should be playing
         {
-            // ====== ENVELOPE SETUP =======
-            // ====== GLOBAL =======
-            juce::ADSR::Parameters envParams (0.1, 0.25, 1.0f, *release + 0.1f); // Make sure to end after feedback release
-            env.setParameters(envParams);
-
-            // ====== IMPULSE =======
-            juce::ADSR::Parameters impulseParams (0.01f, 0.1f, *sustain * 0.3, *release + 0.01f);
-            impulseEnv.setParameters(impulseParams);
-        
+            jassert (isPrepared); // Did you prepare to play?
+            
+            if (! isVoiceActive()) // If Voice is silent, return without doing anything
+                return;
+            
+            
+            // ====== ADSR =======
+            generalADSR.updateADSR (0.1, 0.25, 1.0f, *release + 0.1f); // Make sure to end after feedback release
+            impulseADSR.updateADSR (0.01f, 0.1f, *sustain * 0.3, *release + 0.01f);
 
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
@@ -196,8 +194,8 @@ public:
                 float smoothedGlobalVol = globalVol.getNextValue();
 
                 // ====== ENVELOPE VALUES =======
-                float envVal = env.getNextSample(); // Global envelope
-                float impulseVal = impulseEnv.getNextSample(); // White Noise envelope
+                float envVal = generalADSR.getNextSample(); // Global envelope
+                float impulseVal = impulseADSR.getNextSample(); // White Noise envelope
                 
                 // ====== EXCITATION =======
                 float impulse = excitation.process();
@@ -294,10 +292,8 @@ private:
     std::atomic<float>* release;
     std::atomic<float>* volume;
 
-    // ====== ENVELOPES =======   
-    //juce::ADSR env, impulseEnv, feedbackEnv;
-    ADSRData env, impulseEnv, feedbackEnv;
-    // ADSRData adsr;
+    // ====== ENVELOPES =======
+    ADSRData generalADSR, impulseADSR;
 
     // ====== IMPULSE =======   
     juce::Random random; // for Filterbank
@@ -311,6 +307,8 @@ private:
 
     // ====== GLOBAL VOLUME =======   
     juce::SmoothedValue<float> globalVol;
+    
+    bool isPrepared { false }; 
 
     // ====== UTILITY =======   
     float freq; // Frequency of Synth

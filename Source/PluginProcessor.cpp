@@ -152,7 +152,7 @@ void KarPlusPlus2AudioProcessor::prepareToPlay(double sampleRate, int samplesPer
     for (int i = 0; i < voiceCount; i++)
     {
         MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
-        v->init(sampleRate);
+        v->prepareToPlay(sampleRate);
     }
 }
 
