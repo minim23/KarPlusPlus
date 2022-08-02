@@ -23,29 +23,9 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
 #endif
     ),
 #endif
-    parameters(*this, nullptr, "ParamTreeID", {
-    // Parameter Layout
-    // id, description, min val, max val, default val
-        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPEXCITATION", 1}, "Dampen Excitation", 0.0f, 1.0f, 0.5f),
-        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPSTRING", 1}, "Dampen String", 0.0f, 1.0f, 0.5f),
-        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"SUSTAIN", 1}, "Noise Sustain", 0.0f, 1.0f, 0.8f),
-        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"TAIL", 1}, "Feedback", 0.0f, 1.0f, 0.9f),
-        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"INSTABILITY", 1}, "Instability", 0.0f, 20.0f, 0.0f),
+    apvts(*this, nullptr, "ParamTreeID", createParams())
 
-        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"RELEASE", 1}, "Release", 0.0f, 10.0f, 5.0f),
-        std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VOLUME", 1}, "Volume", 0.0f, 1.0f, 0.7f)
-        })
 {
-    dampExParam = parameters.getRawParameterValue("DAMPEXCITATION");
-    
-    dampStringParam = parameters.getRawParameterValue("DAMPSTRING");
-    sustainParam = parameters.getRawParameterValue("SUSTAIN");
-    tailParam = parameters.getRawParameterValue("TAIL");
-    instabilityParam = parameters.getRawParameterValue("INSTABILITY");
-
-    releaseParam = parameters.getRawParameterValue("RELEASE");
-    volumeParam = parameters.getRawParameterValue("VOLUME");
-
     // Constructor to set up polyphony
     for (int i = 0; i < voiceCount; i++)
     {
@@ -53,22 +33,6 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
     }
 
     synth.addSound(new MySynthSound()); //Synth Sound allocates
-
-    for (int i = 0; i < voiceCount; i++)
-    {
-        MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
-        v->setParameterPointers(
-                                dampExParam,
-                                
-                                dampStringParam,
-                                sustainParam,
-                                tailParam,
-                                instabilityParam,
-        
-                                releaseParam,
-                                volumeParam
-            );
-    }
 
     // ====== FORMANTS SETUP =======
     for (int i = 0; i < voiceCount; i++)
@@ -190,6 +154,38 @@ bool KarPlusPlus2AudioProcessor::isBusesLayoutSupported(const BusesLayout& layou
 void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
+    
+    for (int i = 0; i < synth.getNumVoices(); ++i) /// Update parameters
+    {
+        if (auto voice = dynamic_cast<MySynthVoice*>(synth.getVoice(i))) /// make sure that voice casts correctly as SynthVoice which has updateADSR function
+        {
+            ///Get parameters
+            auto& dampExParam = *apvts.getRawParameterValue("DAMPEXCITATION");
+            auto& formantScaleParam = *apvts.getRawParameterValue("FORMANTSCALING");
+            
+            auto& dampStringParam = *apvts.getRawParameterValue("DAMPSTRING");
+            auto& sustainParam = *apvts.getRawParameterValue("SUSTAIN");
+            auto& tailParam = *apvts.getRawParameterValue("TAIL");
+            auto& instabilityParam = *apvts.getRawParameterValue("INSTABILITY");
+            
+            auto& releaseParam = *apvts.getRawParameterValue("RELEASE");
+            auto& volumeParam = *apvts.getRawParameterValue("VOLUME");
+            
+            
+            voice->setParameterPointers(
+                                    dampExParam.load(),
+                                    formantScaleParam.load(),
+                                    
+                                    dampStringParam.load(),
+                                    sustainParam.load(),
+                                    tailParam.load(),
+                                    instabilityParam.load(),
+            
+                                    releaseParam.load(),
+                                    volumeParam.load()
+                );/// .load() refers to those parameters being atomic
+        }
+    }
 
     // PROCESSING SYNTH CLASS
     synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
@@ -210,7 +206,7 @@ juce::AudioProcessorEditor* KarPlusPlus2AudioProcessor::createEditor()
 void KarPlusPlus2AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     // getStateInformation
-    auto state = parameters.copyState();
+    auto state = apvts.copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
 }
@@ -221,9 +217,9 @@ void KarPlusPlus2AudioProcessor::setStateInformation(const void* data, int sizeI
     std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
     if (xmlState.get() != nullptr)
     {
-        if (xmlState->hasTagName(parameters.state.getType()))
+        if (xmlState->hasTagName(apvts.state.getType()))
         {
-            parameters.replaceState(juce::ValueTree::fromXml(*xmlState));
+            apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
         }
     }
 }
@@ -234,4 +230,26 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new KarPlusPlus2AudioProcessor();
 
+}
+
+// Parameter Layout - DATA Side of the Plugin
+juce::AudioProcessorValueTreeState::ParameterLayout KarPlusPlus2AudioProcessor::createParams()
+{
+    // Vector (List) that returns object type ParameterLayout
+    std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+    
+    // push_back adds another element to the end of our vector
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPEXCITATION", 1}, "Dampen Excitation", 0.0f, 1.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"FORMANTSCALING", 1}, "Formant Scaling", 0.0f, 1.0f, 0.5f));
+    
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPSTRING", 1}, "Dampen String", 0.0f, 1.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"SUSTAIN", 1}, "Noise Sustain", 0.0f, 1.0f, 0.8f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"TAIL", 1}, "Feedback", 0.0f, 1.0f, 0.9f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"INSTABILITY", 1}, "Instability", 0.0f, 20.0f, 0.0f));
+
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"RELEASE", 1}, "Release", 0.0f, 10.0f, 5.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VOLUME", 1}, "Volume", 0.0f, 1.0f, 0.7f));
+
+    // Return Parameter Layout
+    return { params.begin(), params.end() };
 }

@@ -37,19 +37,20 @@ public:
 
     // ====== INITIALIZATE PARAMETER POINTERS =======
     void setParameterPointers(
-
-    std::atomic<float>* dampExIn,
+                              float dampExIn,
+                              float FormantScaleIn,
                               
-    std::atomic<float>* dampStringIn,
-    std::atomic<float>* sustainIn,
-    std::atomic<float>* tailIn,
-    std::atomic<float>* instabilityIn,
+                              float dampStringIn,
+                              float sustainIn,
+                              float tailIn,
+                              float instabilityIn,
 
-    std::atomic<float>* releaseIn,
-    std::atomic<float>* volumeIn
+                              float releaseIn,
+                              float volumeIn
     )
     {
         dampExAmount = dampExIn;
+        formantScaling = FormantScaleIn;
         
         dampStringAmount = dampStringIn;
         sustain = sustainIn;
@@ -108,16 +109,15 @@ public:
         freq = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
 
         // ====== EXCITATION =======
-        excitation.setDampening(*dampExAmount);
-        excitation.setDampening(*dampExAmount);
+        excitation.setDampening(dampExAmount);
         
         // ====== STRING =======
         karplusStrong.setAllpass(random.nextFloat(), random.nextFloat());
-        karplusStrong.setDampening(*dampStringAmount);
+        karplusStrong.setDampening(dampStringAmount);
 
         // ====== FORMANT COEFFICIENTS =======
-        auto& dampEx = *dampExAmount; // De-reference pointer
-        formants.setCoeff(dampEx); // Insert de-referenced value
+        auto& formantScale = formantScaling; // De-reference pointer
+        formants.setCoeff(formantScale); // Insert de-referenced value
 
         // ====== TRIGGER ENVELOPES =======
         generalADSR.reset(); // clear out envelope before re-triggering it
@@ -161,14 +161,14 @@ public:
                 return;
             
             // ====== ADSR =======
-            generalADSR.updateADSR (0.1, 0.25, 1.0f, *release + 0.1f); // Make sure to end after feedback release
-            impulseADSR.updateADSR (0.01f, 0.1f, *sustain * 0.3, *release + 0.01f);
+            generalADSR.updateADSR (0.1, 0.25, 1.0f, release + 0.1f); // Make sure to end after feedback release
+            impulseADSR.updateADSR (0.01f, 0.1f, sustain * 0.3, release + 0.01f);
 
             // ====== DSP LOOP =======
             for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
             {
                 // ====== SMOOTHED VOLUME =======
-                globalVol.setTargetValue(*volume); // Output Volume
+                globalVol.setTargetValue(volume); // Output Volume
                 float smoothedGlobalVol = globalVol.getNextValue();
 
                 // ====== ENVELOPE VALUES =======
@@ -179,11 +179,11 @@ public:
                 float impulse = excitation.process() * impulseVal; // Enveloped White Noise
 
                 // ====== FORMANTS =======
-                formants.process(impulse);
+                // formants.process(impulse);
                 
                 // ====== KARPLUS STRONG =======
-                karplusStrong.setPitch (freq, *instabilityAmount);
-                karplusStrong.setFeedback (*tailAmount); // Feedback between 0-1
+                karplusStrong.setPitch (freq, instabilityAmount);
+                karplusStrong.setFeedback (tailAmount); // Feedback between 0-1
                 
                 // ====== SAMPLE PROCESSING CHAIN =======
                 float currentSample = karplusStrong.process (impulse); // Karplus Strong Volume
@@ -232,15 +232,16 @@ private:
     bool isPrepared { false };
 
     // ====== PARAMETER VALUES ======= 
-    std::atomic<float>* dampExAmount;
-    std::atomic<float>* dampStringAmount;
-    std::atomic<float>* room;
-    std::atomic<float>* sustain;
-    std::atomic<float>* tailAmount;
-    std::atomic<float>* instabilityAmount;
+    float dampExAmount;
+    float formantScaling;
+    float dampStringAmount;
+    float room;
+    float sustain;
+    float tailAmount;
+    float instabilityAmount;
 
-    std::atomic<float>* release;
-    std::atomic<float>* volume;
+    float release;
+    float volume;
 
     // ====== ENVELOPES =======
     ADSRData generalADSR, impulseADSR;

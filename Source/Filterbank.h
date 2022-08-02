@@ -44,6 +44,8 @@ public:
         source = exColour // Take formanted impulse
                       / formantAmount // Adjust volume relative to formant amount
                       * sqrt(formantAmount); // Adjust volume relative to resonance of filter - normally this should be square root of Q, but this did not seem practical
+        
+        DBG (source);
     }
     
 private:
