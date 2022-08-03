@@ -39,6 +39,7 @@ public:
     void setParameterPointers(
                               float dampExIn,
                               float FormantScaleIn,
+                              float FormantQIn,
                               
                               float dampStringIn,
                               float sustainIn,
@@ -51,6 +52,7 @@ public:
     {
         dampExAmount = dampExIn;
         formantScaling = FormantScaleIn;
+        formantQ = FormantQIn;
         
         dampStringAmount = dampStringIn;
         sustain = sustainIn;
@@ -107,7 +109,8 @@ public:
 
         // ====== FORMANT COEFFICIENTS =======
         auto& formantScale = formantScaling; // De-reference pointer
-        formants.setCoeff (formantScale); // Insert de-referenced value
+        auto& formantRes = formantQ; // De-reference pointer
+        formants.setCoeff (formantScale, formantRes); // Insert de-referenced value
         
         // ====== KARPLUS STRONG =======
         karplusStrong.setPitch (freq);
@@ -163,29 +166,23 @@ public:
             {
                 // ====== SMOOTHED VOLUME =======
                 globalVol.setTargetValue(volume); // Output Volume
-                float smoothedGlobalVol = globalVol.getNextValue();
+                float vol = globalVol.getNextValue();
+                vol = vol * vol * vol;
 
-                // ====== ENVELOPE VALUES =======
-                float envVal = generalADSR.getNextSample(); // Global envelope
-                float impulseVal = impulseADSR.getNextSample(); // White Noise envelope
-                
-                // ====== EXCITATION =======
-                float impulse = excitation.process() * impulseVal; // Enveloped White Noise
-
-                // ====== FORMANTS =======
-                // formants.process(impulse);
-                
-                // ====== SAMPLE PROCESSING CHAIN =======
-                float currentSample = karplusStrong.process (impulse); // Karplus Strong Volume
-                
-                // ====== GLOBAL ENVELOPE AND VOLUME =======
-                currentSample = currentSample
-                                    * envVal // Global envelope
-                                    * smoothedGlobalVol * smoothedGlobalVol * smoothedGlobalVol; // Exponential output control for volume adjustment
+                // ====== ADSR =======
+                float globalEnv = generalADSR.getNextSample(); // Global envelope
+                float impulseEnv = impulseADSR.getNextSample(); // White Noise envelope
                                 
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
                 {
+                    float impulse = excitation.process() * impulseEnv; // Enveloped White Noise
+                    float formanted = formants.process (impulse); // Run through Filterbank
+                    float currentSample = karplusStrong.process (formanted); // Run through String Model
+                    
+                    currentSample = currentSample * globalEnv; // ADSR
+                    currentSample = currentSample * vol; // Volume
+                    
                     outputBuffer.addSample (chan, sampleIndex, currentSample);
                     
                     // DO SOME HAAS MAGIC HERE
@@ -224,6 +221,8 @@ private:
     // ====== PARAMETER VALUES ======= 
     float dampExAmount;
     float formantScaling;
+    float formantQ;
+    
     float dampStringAmount;
     float room;
     float sustain;

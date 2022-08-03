@@ -16,6 +16,7 @@ public:
     {
         float aIn = input + oldy;
         
+        // ====== NON-LINEARITY =======
         if (aIn >= 0)
             aIn = 0;
         else
@@ -24,10 +25,10 @@ public:
         coeffA1 = coeffA1 * (aIn * -1);
         coeffA2 = coeffA2 * aIn * -1;
         
-        float c1 = coeffA1;
-        float c2 = coeffA2;
+        float c = coeffA1 + coeffA2;
         
-        float output = c1 * input + oldx - c2 * oldy;
+        // ====== ALLPASS EQUATION =======
+        float output = c * input + oldx - c * oldy;
         oldx = input;
         oldy = output;
         
@@ -36,8 +37,8 @@ public:
     
 private:
     // ====== COEFFICIENTS =======
-    float coeffA1 { 0.4 } ;
-    float coeffA2 { -0.5 };
+    float coeffA1;
+    float coeffA2;
     
     Delay sampleDelay;
     

@@ -18,23 +18,28 @@ public:
     }
     
     // ====== FORMANT COEFFICIENTS =======
-    void setCoeff(float dampEx)
+    void setCoeff(float formantScaling, float resonance)
     {
         for (int i = 0; i < formantAmount; i++)
         {
-            auto maxRandFreq = dampEx // Get relative value
+            auto maxRandFreq = formantScaling // Get relative value
                                 * 1000 // Max. Freq for ranomization of filters
                                 + 1; // Next Int can not be 0
 
-            auto maxFreq = dampEx // Get relative value
+            auto maxFreq = formantScaling // Get relative value
                             * 4000 // Rough max. Freq
                             + 100; // Absolute min. Freq
+            
+            auto freq = random.nextInt (maxRandFreq) + maxFreq;
+            
+            float variation = random.nextFloat() * resonance;
 
-            formants[i]->setCoefficients(juce::IIRCoefficients::makeBandPass(sr, random.nextInt(maxRandFreq) + maxFreq, (random.nextFloat() - 0.01) + 0.01));
+            formants[i]->setCoefficients (juce::IIRCoefficients::makePeakFilter (sr, freq , variation, variation));
+            DBG (freq);
         }
     }
     
-    void process(float source)
+    float process (float source)
     {
         for (auto* formant : formants) // Process Impulse through array of randomized Bandpass Filters on left and right channel
         {
@@ -45,7 +50,7 @@ public:
                       / formantAmount // Adjust volume relative to formant amount
                       * sqrt(formantAmount); // Adjust volume relative to resonance of filter - normally this should be square root of Q, but this did not seem practical
         
-        DBG (source);
+        return source;
     }
     
 private:

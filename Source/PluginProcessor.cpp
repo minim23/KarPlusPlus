@@ -164,6 +164,7 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
             // ====== PARAMETERS =======
             auto& dampExParam = *apvts.getRawParameterValue("DAMPEXCITATION");
             auto& formantScaleParam = *apvts.getRawParameterValue("FORMANTSCALING");
+            auto& formantQParam = *apvts.getRawParameterValue("FORMANTQ");
             
             auto& dampStringParam = *apvts.getRawParameterValue("DAMPSTRING");
             auto& sustainParam = *apvts.getRawParameterValue("SUSTAIN");
@@ -177,6 +178,7 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
             voice->setParameterPointers(
                                     dampExParam.load(),
                                     formantScaleParam.load(),
+                                    formantQParam.load(),
                                     
                                     dampStringParam.load(),
                                     sustainParam.load(),
@@ -243,6 +245,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout KarPlusPlus2AudioProcessor::
     // push_back adds another element to the end of our vector
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPEXCITATION", 1}, "Dampen Excitation", 0.0f, 1.0f, 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"FORMANTSCALING", 1}, "Formant Scaling", 0.0f, 1.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"FORMANTQ", 1}, "Formant Q", 0.1f, 50.0f, 0.5f));
     
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPSTRING", 1}, "Dampen String", 0.0f, 1.0f, 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"SUSTAIN", 1}, "Noise Sustain", 0.0f, 1.0f, 0.8f));

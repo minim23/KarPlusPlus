@@ -67,6 +67,7 @@ private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     std::atomic<float>* dampExParam;
     std::atomic<float>* formantScaleParam;
+    std::atomic<float>* formantQParam;
 
     std::atomic<float>* dampStringParam;
     std::atomic<float>* sustainParam;

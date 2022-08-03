@@ -27,7 +27,6 @@ public:
         dampen.setCoefficients(juce::IIRCoefficients::makeLowPass(sr, filterFreq, 1.0f));
     }
     
-    
 private:
     juce::Random random;
     juce::IIRFilter dampen;
