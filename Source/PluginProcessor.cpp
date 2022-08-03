@@ -26,13 +26,13 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
     apvts(*this, nullptr, "ParamTreeID", createParams())
 
 {
-    // Constructor to set up polyphony
+    // ====== CONSTRUCTOR TO SET UP POLYPHONY =======
     for (int i = 0; i < voiceCount; i++)
     {
         synth.addVoice(new MySynthVoice()); //Synth Voice makes the sound
     }
 
-    synth.addSound(new MySynthSound()); //Synth Sound allocates
+    synth.addSound(new MySynthSound()); // Synth Sound allocates
 
     // ====== FORMANTS SETUP =======
     for (int i = 0; i < voiceCount; i++)
@@ -155,11 +155,13 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
 {
     juce::ScopedNoDenormals noDenormals;
     
-    for (int i = 0; i < synth.getNumVoices(); ++i) /// Update parameters
+    // ====== UPDATE PARAMETERS =======
+    for (int i = 0; i < synth.getNumVoices(); ++i)
     {
-        if (auto voice = dynamic_cast<MySynthVoice*>(synth.getVoice(i))) /// make sure that voice casts correctly as SynthVoice which has updateADSR function
+        // ====== SYNTH VOICE CAST =======
+        if (auto voice = dynamic_cast<MySynthVoice*>(synth.getVoice(i)))
         {
-            ///Get parameters
+            // ====== PARAMETERS =======
             auto& dampExParam = *apvts.getRawParameterValue("DAMPEXCITATION");
             auto& formantScaleParam = *apvts.getRawParameterValue("FORMANTSCALING");
             
@@ -171,7 +173,7 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
             auto& releaseParam = *apvts.getRawParameterValue("RELEASE");
             auto& volumeParam = *apvts.getRawParameterValue("VOLUME");
             
-            
+            // ====== CONVERT ATOMIC PARAMETERS TO FLOATS =======
             voice->setParameterPointers(
                                     dampExParam.load(),
                                     formantScaleParam.load(),
@@ -183,11 +185,11 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
             
                                     releaseParam.load(),
                                     volumeParam.load()
-                );/// .load() refers to those parameters being atomic
+                );
         }
     }
 
-    // PROCESSING SYNTH CLASS
+    // ====== DSP PROCESSING =======
     synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 }
 

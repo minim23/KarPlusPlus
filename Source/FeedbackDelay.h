@@ -12,28 +12,19 @@ public:
     {
         delete buffer;      // clean up when the object is destroyed to avoid memory leaks
     }
-
-    // ====== CIRCULAR BUFFER - CAN BE REPLACED OR RE-USED =======
-    virtual float process(float inSamp)
-    {
-        float outVal = readVal();
-        writeVal(inSamp + feedback * outVal); // Feedback scales output back into input
-        float floor(outVal); // Calculate interpolation
-        return floor;
-    }
     
     // ====== SETTER FUNCTIONS =======
-    void setSamplerate(float samplerate)
+    void setSamplerate (float samplerate)
     {
         sr = samplerate; // Assign to private member variable
 
-        smoothDelaytime.reset(sr, 0.02f); // Set samplerate and smoothing of 20ms
-        smoothDelaytime.setCurrentAndTargetValue(0.0); // will be overwritten
+        smoothDelaytime.reset (sr, 0.02f); // Set samplerate and smoothing of 20ms
+        smoothDelaytime.setCurrentAndTargetValue (0.0); // will be overwritten
 
-        smoothFeedback.reset(sr, 0.05f); // Smoothing of 50ms
-        smoothFeedback.setCurrentAndTargetValue(0.0);
+        smoothFeedback.reset (sr, 0.05f); // Smoothing of 50ms
+        smoothFeedback.setCurrentAndTargetValue (0.0);
     }
-
+    
     void setSize(float newSize)
     {
         size = newSize; // Assign to private member variable
@@ -43,20 +34,20 @@ public:
             buffer[i] = 0.0f;
         }
     }
-
-    void setDelayTimeInSamples(float delTime)
+    
+    void setDelayTimeInSamples (float delTime)
     {
-        smoothDelaytime.setTargetValue(delTime);
+        smoothDelaytime.setTargetValue (delTime);
         delayTimeInSamples = smoothDelaytime.getNextValue(); // Smoothed value
 
         readPos = writePos - delayTimeInSamples; // Calculate delay
-        while (readPos < 0) 
+        while (readPos < 0)
         readPos += size; // Calculate max. size
     }
     
-    void setFeedback(float fb) // Value between 0-1 if not running through tanh() or similar
+    void setFeedback (float fb) // Value between 0-1 if not running through tanh() or similar
     {
-        smoothFeedback.setTargetValue(fb);
+        smoothFeedback.setTargetValue (fb);
         float smoothedFeedback = smoothFeedback.getNextValue(); // Smoothed value
 
         feedback = smoothedFeedback; // Assign to private member variable
@@ -65,22 +56,6 @@ public:
             feedback = 10.0f;
         if (feedback < 0)
             feedback = 0.0f;
-    }
-
-    // ====== GETTER FUNCTIONS =======
-    float getDelayTimeInSamples()
-    {
-        return delayTimeInSamples;
-    }
-
-    float getFeedback()
-    {
-        return feedback;
-    }
-
-    int getSamplerate()
-    {
-        return sr;
     }
     
     // ====== UTILITY FUNCTIONS =======
@@ -97,6 +72,15 @@ public:
         buffer[writePos] = inSamp; // write into buffer
         writePos++;  // Increment write position
         writePos %= size; // Set write position relative to max size
+    }
+    
+    // ====== CIRCULAR BUFFER - CAN BE REPLACED OR RE-USED =======
+    virtual float process (float inSamp)
+    {
+        float outVal = readVal();
+        writeVal (inSamp + feedback * outVal); // Feedback scales output back into input
+        float floor (outVal); // Calculate interpolation
+        return floor;
     }
     
 protected:

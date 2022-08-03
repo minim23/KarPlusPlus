@@ -61,15 +61,6 @@ public:
         volume = volumeIn;
     }
 
-//    // ====== SETUP FORMANTS =======
-//    void setFormants()
-//    {
-//        for (int i = 0; i < formantAmount; i++)
-//        {
-//            formants.add(new juce::IIRFilter());
-//        }
-//    }
-
     // ====== SAMPLERATE SETUP FOR PREPARE TO PLAY =======
     void prepareToPlay(int sampleRate)
     {
@@ -106,18 +97,21 @@ public:
         ending = false;
 
         // ====== MIDI TO FREQ =======
-        freq = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
+        freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber);
 
         // ====== EXCITATION =======
-        excitation.setDampening(dampExAmount);
+        excitation.setDampening (dampExAmount);
         
         // ====== STRING =======
-        karplusStrong.setAllpass(random.nextFloat(), random.nextFloat());
-        karplusStrong.setDampening(dampStringAmount);
+        karplusStrong.setDampening (dampStringAmount);
 
         // ====== FORMANT COEFFICIENTS =======
         auto& formantScale = formantScaling; // De-reference pointer
-        formants.setCoeff(formantScale); // Insert de-referenced value
+        formants.setCoeff (formantScale); // Insert de-referenced value
+        
+        // ====== KARPLUS STRONG =======
+        karplusStrong.setPitch (freq);
+        karplusStrong.setFeedback (tailAmount); // Feedback between 0-1
 
         // ====== TRIGGER ENVELOPES =======
         generalADSR.reset(); // clear out envelope before re-triggering it
@@ -180,10 +174,6 @@ public:
 
                 // ====== FORMANTS =======
                 // formants.process(impulse);
-                
-                // ====== KARPLUS STRONG =======
-                karplusStrong.setPitch (freq, instabilityAmount);
-                karplusStrong.setFeedback (tailAmount); // Feedback between 0-1
                 
                 // ====== SAMPLE PROCESSING CHAIN =======
                 float currentSample = karplusStrong.process (impulse); // Karplus Strong Volume
