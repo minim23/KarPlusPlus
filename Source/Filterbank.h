@@ -35,13 +35,12 @@ public:
             float variation = random.nextFloat() * resonance;
 
             formants[i]->setCoefficients (juce::IIRCoefficients::makePeakFilter (sr, freq , variation, variation));
-            DBG (freq);
         }
     }
     
-    float process (float source)
+    float process (float& source)
     {
-        for (auto* formant : formants) // Process Impulse through array of randomized Bandpass Filters on left and right channel
+        for (auto* formant : formants) // Process Impulse through array of randomized Bandpass Filters
         {
              exColour = formant->processSingleSampleRaw(source);
         }

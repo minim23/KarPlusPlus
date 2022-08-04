@@ -12,7 +12,7 @@ public:
     }
 
     // ====== NON-LINEAR ALLPASS =======
-    float process (float input)
+    float process (float& input)
     {
         float aIn = input + oldy;
         

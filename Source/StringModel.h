@@ -34,7 +34,7 @@ public:
     }
     
     // ====== PROCESS =======
-    float process (float inSamp) override
+    float process (float& inSamp) override
     {
         float outVal = readVal();
         
@@ -50,7 +50,7 @@ public:
     }
     
     // ====== TRANSFER FUNCTIONS =======
-    float fold (float inSamp)
+    float fold (float& inSamp)
     {
         if (inSamp > 1) {
             inSamp = inSamp - 1;
@@ -64,7 +64,7 @@ public:
         return inSamp;
     }
     
-    float clip (float inSamp)
+    float clip (float& inSamp)
     {
         if (inSamp > 1) {
             inSamp = 1;
@@ -76,7 +76,7 @@ public:
         return inSamp;
     }
     
-    float loPass (float inSamp)
+    float loPass (float& inSamp)
     {
         float dampenedString = dampen.processSingleSampleRaw (inSamp); // process through IRR Filter
         dampen.processSingleSampleRaw (dampenedString);

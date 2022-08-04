@@ -75,7 +75,7 @@ public:
     }
     
     // ====== CIRCULAR BUFFER - CAN BE REPLACED OR RE-USED =======
-    virtual float process (float inSamp)
+    virtual float process (float& inSamp)
     {
         float outVal = readVal();
         writeVal (inSamp + feedback * outVal); // Feedback scales output back into input

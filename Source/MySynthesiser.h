@@ -101,15 +101,13 @@ public:
         // ====== MIDI TO FREQ =======
         freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber);
 
-        // ====== EXCITATION =======
+        // ====== FILTERING =======
         excitation.setDampening (dampExAmount);
-        
-        // ====== STRING =======
         karplusStrong.setDampening (dampStringAmount);
 
         // ====== FORMANT COEFFICIENTS =======
-        auto& formantScale = formantScaling; // De-reference pointer
-        auto& formantRes = formantQ; // De-reference pointer
+        auto& formantScale = formantScaling; // Reference to Parameter
+        auto& formantRes = formantQ; // Reference to Parameter
         formants.setCoeff (formantScale, formantRes); // Insert de-referenced value
         
         // ====== KARPLUS STRONG =======
@@ -176,9 +174,11 @@ public:
                 // ====== CHANNEL ASSIGNMENT =======
                 for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
                 {
-                    float impulse = excitation.process() * impulseEnv; // Enveloped White Noise
-                    float formanted = formants.process (impulse); // Run through Filterbank
-                    float currentSample = karplusStrong.process (formanted); // Run through String Model
+                    // ====== STEREO DSP =======
+                    float currentSample = excitation.process();
+                    currentSample = currentSample * impulseEnv;
+                    // currentSample = formants.process (currentSample);
+                    currentSample = karplusStrong.process (currentSample);
                     
                     currentSample = currentSample * globalEnv; // ADSR
                     currentSample = currentSample * vol; // Volume
