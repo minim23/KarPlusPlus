@@ -29,15 +29,15 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
     // ====== CONSTRUCTOR TO SET UP POLYPHONY =======
     for (int i = 0; i < voiceCount; i++)
     {
-        synth.addVoice(new MySynthVoice()); //Synth Voice makes the sound
+        synth.addVoice (new MySynthVoice()); //Synth Voice makes the sound
     }
 
-    synth.addSound(new MySynthSound()); // Synth Sound allocates
+    synth.addSound (new MySynthSound()); // Synth Sound allocates
 
     // ====== FORMANTS SETUP =======
     for (int i = 0; i < voiceCount; i++)
     {
-    MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i));
+    MySynthVoice* v = dynamic_cast<MySynthVoice*> (synth.getVoice(i));
     v->formants.setFormants();
     }
 }
@@ -163,30 +163,44 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
         {
             // ====== PARAMETERS =======
             auto& dampExParam = *apvts.getRawParameterValue("DAMPEXCITATION");
-            auto& formantScaleParam = *apvts.getRawParameterValue("FORMANTSCALING");
+            auto& velToDampExParam = *apvts.getRawParameterValue("VELTODAMPEX");
+            auto& sustainParam = *apvts.getRawParameterValue("SUSTAIN");
+            auto& velToSustainParam = *apvts.getRawParameterValue("VELTOSUSTAINEX");
+            
+            auto& formantWidthParam = *apvts.getRawParameterValue("FORMANTSCALING");
+            auto& velToFormantWidthParam = *apvts.getRawParameterValue("VELTOFORMANTWIDTH");
             auto& formantQParam = *apvts.getRawParameterValue("FORMANTQ");
+            auto& velToFormantQParam = *apvts.getRawParameterValue("VELTOFORMANTQ");
             
             auto& dampStringParam = *apvts.getRawParameterValue("DAMPSTRING");
-            auto& sustainParam = *apvts.getRawParameterValue("SUSTAIN");
-            auto& tailParam = *apvts.getRawParameterValue("TAIL");
-            auto& instabilityParam = *apvts.getRawParameterValue("INSTABILITY");
+            auto& velToDampStringParam = *apvts.getRawParameterValue("VELTODAMPENSTRING");
+
+            auto& feedbackParam = *apvts.getRawParameterValue("FEEDBACK");
+            auto& velToFeedbackParam = *apvts.getRawParameterValue("VELTOFEEDBACK");
             
             auto& releaseParam = *apvts.getRawParameterValue("RELEASE");
             auto& volumeParam = *apvts.getRawParameterValue("VOLUME");
             
             // ====== CONVERT ATOMIC PARAMETERS TO FLOATS =======
             voice->setParameterPointers(
-                                    dampExParam.load(),
-                                    formantScaleParam.load(),
-                                    formantQParam.load(),
+                                        dampExParam.load(),
+                                        velToDampExParam.load(),
+                                        sustainParam.load(),
+                                        velToSustainParam.load(),
+                                        
+                                        formantWidthParam.load(),
+                                        velToFormantWidthParam.load(),
+                                        formantQParam.load(),
+                                        velToFormantQParam.load(),
                                     
-                                    dampStringParam.load(),
-                                    sustainParam.load(),
-                                    tailParam.load(),
-                                    instabilityParam.load(),
+                                        dampStringParam.load(),
+                                        velToDampStringParam.load(),
+                                    
+                                        feedbackParam.load(),
+                                        velToFeedbackParam.load(),
             
-                                    releaseParam.load(),
-                                    volumeParam.load()
+                                        releaseParam.load(),
+                                        volumeParam.load()
                 );
         }
     }
@@ -239,18 +253,24 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 // Parameter Layout - DATA Side of the Plugin
 juce::AudioProcessorValueTreeState::ParameterLayout KarPlusPlus2AudioProcessor::createParams()
 {
-    // Vector (List) that returns object type ParameterLayout
+    // Vector List that returns object type ParameterLayout
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
     
     // push_back adds another element to the end of our vector
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPEXCITATION", 1}, "Dampen Excitation", 0.0f, 1.0f, 0.5f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"FORMANTSCALING", 1}, "Formant Scaling", 0.0f, 1.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VELTODAMPEX", 1}, "Vel -> Damp Ex", 0.0f, 1.0f, 0.1f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"SUSTAIN", 1}, "Sustain Excitation", 0.0f, 1.0f, 0.8f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VELTOSUSTAINEX", 1}, "Vel -> Sustain Ex", 0.0f, 1.0f, 0.1f));
+    
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"FORMANTSCALING", 1}, "Formant Width", 0.0f, 1.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VELTOFORMANTWIDTH", 1}, "Vel -> Formant W", 0.0f, 1.0f, 0.1f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"FORMANTQ", 1}, "Formant Q", 0.1f, 50.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VELTOFORMANTQ", 1}, "Vel -> Formant Q", 0.0f, 1.0f, 0.1f));
     
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"DAMPSTRING", 1}, "Dampen String", 0.0f, 1.0f, 0.5f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"SUSTAIN", 1}, "Noise Sustain", 0.0f, 1.0f, 0.8f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"TAIL", 1}, "Feedback", 0.0f, 1.0f, 0.9f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"INSTABILITY", 1}, "Instability", 0.0f, 20.0f, 0.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VELTODAMPENSTRING", 1}, "Vel -> Dampen St", 0.0f, 1.0f, 0.1f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"FEEDBACK", 1}, "Feedback", 0.0f, 1.0f, 0.9f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VELTOFEEDBACK", 1}, "Vel -> Feedback", 0.0f, 1.0f, 0.1f));
 
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"RELEASE", 1}, "Release", 0.0f, 10.0f, 5.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VOLUME", 1}, "Volume", 0.0f, 1.0f, 0.7f));

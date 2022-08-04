@@ -37,49 +37,54 @@ public:
 
     // ====== INITIALIZATE PARAMETER POINTERS =======
     void setParameterPointers(
-                              float dampExIn,
-                              float FormantScaleIn,
-                              float FormantQIn,
+                              float dampExParam,
+                              float velToDampExParam,
+                              float sustainParam,
+                              float velToSustainParam,
                               
-                              float dampStringIn,
-                              float sustainIn,
-                              float tailIn,
-                              float instabilityIn,
-
-                              float releaseIn,
-                              float volumeIn
+                              float formantWidthParam,
+                              float velToFormantWParam,
+                              float formantQParam,
+                              float velToFormantQParam,
+                          
+                              float dampStringParam,
+                              float velToDampStringParam,
+                              float feedbackParam,
+                              float velToFeedbackParam,
+  
+                              float releaseParam,
+                              float volumeParam
     )
     {
-        dampExAmount = dampExIn;
-        formantScaling = FormantScaleIn;
-        formantQ = FormantQIn;
+        dampExcitation = dampExParam;
+        velToDampExAmount = velToDampExParam;
+        sustainExcitation = sustainParam;
+        velToSustainExAmount = velToSustainParam;
         
-        dampStringAmount = dampStringIn;
-        sustain = sustainIn;
-        tailAmount = tailIn;
-        instabilityAmount = instabilityIn;
+        formantWidth = formantWidthParam;
+        velToFormantWAmount = velToFormantWParam;
+        formantQ = formantQParam;
+        velToFormantQAmount = velToFormantQParam;
+        
+        dampenString = dampStringParam;
+        velToDampenStAmount = velToDampStringParam;
+        feedback = feedbackParam;
+        velToFeedbackAmount = velToFeedbackParam;
 
-        release = releaseIn;
-        volume = volumeIn;
+        release = releaseParam;
+        volume = volumeParam;
     }
 
     // ====== SAMPLERATE SETUP FOR PREPARE TO PLAY =======
     void prepareToPlay(int sampleRate)
     {
+        excitation.setSamplerate (sampleRate);
+        formants.setSamplerate (sampleRate);
+        karplusStrong.setSamplerate (sampleRate);
+        
         sr = sampleRate;
-
-        // ====== KARPLUS STRONG SETUP =======
-        karplusStrong.setSamplerate(sr);
-        karplusStrong.setSize(sr * 1); // Delay size of 1000ms
         
-        // ====== EXCITATION SETUP =======
-        excitation.setSamplerate(sr);
-        
-        // ====== FORMANTS SETUP =======
-        formants.setSamplerate(sr);
-        
-        globalVol.reset(sr, 0.02f); // Smoothed value of 20ms
-        globalVol.setCurrentAndTargetValue(0.0);
+        karplusStrong.setSize (sampleRate * 1); // Delay size of 1000ms
         
         isPrepared = true;
     }
@@ -110,32 +115,35 @@ public:
         playing = true;
         ending = false;
 
-        // ====== MIDI TO FREQ =======
-        freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber);
+        freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber); // Get frequency
         
         // ====== RElATIVE VELOCITY VALUES =======
-        float velToFeedback = velToParam (tailAmount, velocity, 0.1f);
-        float velToVol = velToParam (volume, velocity, 1.0f);
+        velToDampenExcitation = velToParam (dampExcitation, velocity, velToDampExAmount);
+        velToSustainExcitation = velToParam (sustainExcitation, velocity, velToSustainExAmount);
+        velToFormantWidth = velToParam (formantWidth, velocity, velToFormantWAmount);
+        velToFormantQ = velToParam (formantQ, velocity, velToFormantQAmount);
+        velToDampenString = velToParam (dampenString, velocity, velToDampenStAmount);
+        velToFeedback = velToParam (feedback, velocity, velToFeedbackAmount);
 
-        // ====== FILTERING =======
-        excitation.setDampening (dampExAmount);
-        karplusStrong.setDampening (dampStringAmount);
+        velToVol = velToParam (volume, velocity, 1.0f);
 
-        // ====== FORMANT COEFFICIENTS =======
-        auto& formantScale = formantScaling; // Reference to Parameter
-        auto& formantRes = formantQ; // Reference to Parameter
-        formants.setCoeff (formantScale, formantRes); // Insert de-referenced value
-        
-        // ====== KARPLUS STRONG =======
+        // ====== SET NOTE PARAMETERS =======
+        excitation.setDampening (velToDampenExcitation);
+        karplusStrong.setDampening (velToDampenString);
+        formants.setCoeff (velToFormantWidth, velToFormantQ);
         karplusStrong.setPitch (freq);
         karplusStrong.setFeedback (velToFeedback); // Feedback between 0-1
 
+        vol = velToVol;
+        
+        
+        // ====== CALCULATE RELEASE TIME OF ADSR BASED ON FEEDBACK AND FREQUENCY =======
+        float hzToMs = 1 / freq;
+        relativeSustainTime = velToFeedback * hzToMs * 1000;
+        
         // ====== TRIGGER ENVELOPES =======
         generalADSR.reset(); // clear out envelope before re-triggering it
         generalADSR.noteOn(); // start envelope
-        
-        // ====== NOTE VELOCITY =======
-        vol = velToVol;
 
         impulseADSR.reset();
         impulseADSR.noteOn();
@@ -147,7 +155,7 @@ public:
      What should be done when a note stops
 
      @param / unused variable
-     @param allowTailOff bool to decie if the should be any volume decay
+     @param allowTailOff bool to decide if there should be any volume decay
      */
     void stopNote(float /*velocity*/, bool allowTailOff) override
     {
@@ -157,30 +165,23 @@ public:
 
         ending = true;
     }
-    
-//    /// New method to update ADSR values
-//    void SynthVoice::update (const float attack, const float decay, const float sustain, const float release)
-//    {
-//      // Separate method to call ADSR in process block
-//    }
 
      // ====== DSP BLOCK =======
     void renderNextBlock(juce::AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override
     {
-        jassert (isPrepared);
+        jassert (isPrepared); // Prepared to play?
         
         if (! isVoiceActive()) // If Voice is silent, return without doing anything
             return;
         
+
         // ====== ADSR =======
-        generalADSR.updateADSR (0.1, 0.25, 1.0f, release + 0.1f); // Make sure to end after feedback release
-        impulseADSR.updateADSR (0.01f, 0.1f, sustain * 0.3, release + 0.01f);
+        generalADSR.updateADSR (0.1, relativeSustainTime, 1.0f, relativeSustainTime); // Make sure to end after feedback release
+        impulseADSR.updateADSR (0.01f, 0.1f, velToSustainExcitation * 0.3, 0.02f);
 
         // ====== DSP LOOP =======
         for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
         {
-
-
             // ====== ADSR =======
             float globalEnv = generalADSR.getNextSample(); // Global envelope
             float impulseEnv = impulseADSR.getNextSample(); // White Noise envelope
@@ -232,21 +233,39 @@ private:
     bool isPrepared { false };
 
     // ====== PARAMETER VALUES ======= 
-    float dampExAmount;
-    float formantScaling;
-    float formantQ;
+    float dampExcitation;
+    float velToDampExAmount;
+    float sustainExcitation;
+    float velToSustainExAmount;
     
-    float dampStringAmount;
-    float room;
-    float sustain;
-    float tailAmount;
-    float instabilityAmount;
-
+    float formantWidth;
+    float velToFormantWAmount;
+    float formantQ;
+    float velToFormantQAmount;
+    
+    float dampenString;
+    float velToDampenStAmount;
+    float feedback;
+    float velToFeedbackAmount;
+    
     float release;
     float volume;
-
+    
+    // ====== VELOCITY RELATIVE VALUES =======
+    float velToDampenExcitation;
+    float velToSustainExcitation;
+    
+    float velToFormantWidth;
+    float velToFormantQ;
+    
+    float velToDampenString;
+    float velToFeedback;
+    
+    float velToVol;
+    
     // ====== ENVELOPES =======
     ADSRData generalADSR, impulseADSR;
+    float relativeSustainTime;
 
     // ====== IMPULSE =======
     Excitation excitation;

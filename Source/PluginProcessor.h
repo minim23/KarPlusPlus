@@ -56,28 +56,14 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    // NEEDS TO BE PUBLIC
-    juce::AudioProcessorValueTreeState apvts;
+    juce::AudioProcessorValueTreeState apvts; // Needs to be public
     
 private:
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(KarPlusPlus2AudioProcessor)
-
-    // Parameter Setup
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
-    std::atomic<float>* dampExParam;
-    std::atomic<float>* formantScaleParam;
-    std::atomic<float>* formantQParam;
-
-    std::atomic<float>* dampStringParam;
-    std::atomic<float>* sustainParam;
-    std::atomic<float>* tailParam;
-    std::atomic<float>* instabilityParam;
-
-    std::atomic<float>* releaseParam;
-    std::atomic<float>* volumeParam;
-
-    // Synthesiser class
+    
     juce::Synthesiser synth;
     int voiceCount = 12;
+    
+    //==============================================================================
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(KarPlusPlus2AudioProcessor)
 };
