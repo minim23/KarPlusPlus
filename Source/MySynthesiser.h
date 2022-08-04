@@ -84,6 +84,18 @@ public:
         isPrepared = true;
     }
     
+    // ====== PRODUCES PARAMETER VALUES RELATIVE TO INPUT VELOCITY =======
+    float velToParam (float parameter, float velocity, float amount)
+    {
+        float velToParam = parameter;
+        velToParam *= amount;
+        velToParam *= velocity;
+        velToParam += parameter;
+        velToParam -= parameter * amount;
+        
+        return velToParam;
+    }
+    
     //--------------------------------------------------------------------------
     /**
      What should be done when a note starts
@@ -93,13 +105,17 @@ public:
      @param SynthesiserSound unused variable
      @param / unused variable
      */
-    void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound*, int /*currentPitchWheelPosition*/) override
+    void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound*, int /*currentPitchWheelPosition*/) override
     {
         playing = true;
         ending = false;
 
         // ====== MIDI TO FREQ =======
         freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber);
+        
+        // ====== RElATIVE VELOCITY VALUES =======
+        float velToFeedback = velToParam (tailAmount, velocity, 0.1f);
+        float velToVol = velToParam (volume, velocity, 1.0f);
 
         // ====== FILTERING =======
         excitation.setDampening (dampExAmount);
@@ -112,11 +128,14 @@ public:
         
         // ====== KARPLUS STRONG =======
         karplusStrong.setPitch (freq);
-        karplusStrong.setFeedback (tailAmount); // Feedback between 0-1
+        karplusStrong.setFeedback (velToFeedback); // Feedback between 0-1
 
         // ====== TRIGGER ENVELOPES =======
         generalADSR.reset(); // clear out envelope before re-triggering it
         generalADSR.noteOn(); // start envelope
+        
+        // ====== NOTE VELOCITY =======
+        vol = velToVol;
 
         impulseADSR.reset();
         impulseADSR.noteOn();
@@ -148,52 +167,46 @@ public:
      // ====== DSP BLOCK =======
     void renderNextBlock(juce::AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override
     {
-        if (playing) // check to see if this voice should be playing
+        jassert (isPrepared);
+        
+        if (! isVoiceActive()) // If Voice is silent, return without doing anything
+            return;
+        
+        // ====== ADSR =======
+        generalADSR.updateADSR (0.1, 0.25, 1.0f, release + 0.1f); // Make sure to end after feedback release
+        impulseADSR.updateADSR (0.01f, 0.1f, sustain * 0.3, release + 0.01f);
+
+        // ====== DSP LOOP =======
+        for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
         {
-            jassert (isPrepared); // Did you prepare to play?
-            
-            if (! isVoiceActive()) // If Voice is silent, return without doing anything
-                return;
-            
+
+
             // ====== ADSR =======
-            generalADSR.updateADSR (0.1, 0.25, 1.0f, release + 0.1f); // Make sure to end after feedback release
-            impulseADSR.updateADSR (0.01f, 0.1f, sustain * 0.3, release + 0.01f);
-
-            // ====== DSP LOOP =======
-            for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
+            float globalEnv = generalADSR.getNextSample(); // Global envelope
+            float impulseEnv = impulseADSR.getNextSample(); // White Noise envelope
+                            
+            // ====== CHANNEL ASSIGNMENT =======
+            for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
             {
-                // ====== SMOOTHED VOLUME =======
-                globalVol.setTargetValue(volume); // Output Volume
-                float vol = globalVol.getNextValue();
-                vol = vol * vol * vol;
-
-                // ====== ADSR =======
-                float globalEnv = generalADSR.getNextSample(); // Global envelope
-                float impulseEnv = impulseADSR.getNextSample(); // White Noise envelope
-                                
-                // ====== CHANNEL ASSIGNMENT =======
-                for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
-                {
-                    // ====== STEREO DSP =======
-                    float currentSample = excitation.process();
-                    currentSample = currentSample * impulseEnv;
-                    // currentSample = formants.process (currentSample);
-                    currentSample = karplusStrong.process (currentSample);
-                    
-                    currentSample = currentSample * globalEnv; // ADSR
-                    currentSample = currentSample * vol; // Volume
-                    
-                    outputBuffer.addSample (chan, sampleIndex, currentSample);
-                    
-                    // DO SOME HAAS MAGIC HERE
-                    
-                    // if adsr is not active, clear current note
-                    if (! generalADSR.isActive())
-                        clearCurrentNote();
-                }
+                // ====== STEREO DSP =======
+                float currentSample = excitation.process();
+                currentSample *= impulseEnv;
+                currentSample = formants.process (currentSample);
+                currentSample = karplusStrong.process (currentSample);
+                
+                currentSample *= globalEnv; // ADSR
+                currentSample *= vol; // Volume
+                
+                outputBuffer.addSample (chan, sampleIndex, currentSample);
+                
+                // DO SOME HAAS MAGIC HERE
+                
+                // if adsr is not active, clear current note
+                if (! generalADSR.isActive())
+                    clearCurrentNote();
             }
-                    
-        }
+                
+    }
     }
 
     //--------------------------------------------------------------------------
@@ -253,5 +266,6 @@ private:
     // ====== UTILITY =======   
     float freq; // Frequency of Synth
     float sr; // Samplerate
+    float vol;
 };
 
