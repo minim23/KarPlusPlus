@@ -15,9 +15,11 @@
 KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
 : foleys::MagicProcessor  (juce::AudioProcessor::BusesProperties()
                            .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
-    apvts(*this, nullptr, "ParamTreeID", createParams())
+    apvts (*this, nullptr, "ParamTreeID", createParams())
 {
     FOLEYS_SET_SOURCE_PATH (__FILE__);
+    
+//    foleys::MagicProcessorState magicState { *this, apvts };
     
     // ====== HERE YOU CAN ADD THE VISUALISATION =======
     
@@ -212,6 +214,7 @@ juce::AudioProcessorEditor* KarPlusPlus2AudioProcessor::createEditor()
 {
 //    return new juce::GenericAudioProcessorEditor(*this);
     return new foleys::MagicPluginEditor (magicState);
+//    return new foleys::MagicPluginEditor (magicState, BinaryData::magic_xml, BinaryData::magic_xmlSize);
 }
 
 //==============================================================================

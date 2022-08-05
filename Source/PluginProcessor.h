@@ -58,11 +58,14 @@ public:
 
     juce::AudioProcessorValueTreeState apvts; // Needs to be public
     
+    
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     
     juce::Synthesiser synth;
     int voiceCount = 12;
+    
+//    foleys::MagicProcessorState magicState { *this, apvts };
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(KarPlusPlus2AudioProcessor)

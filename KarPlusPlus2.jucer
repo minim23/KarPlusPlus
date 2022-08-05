@@ -5,6 +5,7 @@
               companyName="Simon Weins" companyWebsite="www.simonweins.co.uk">
   <MAINGROUP id="RoSkKU" name="KarPlusPlus2">
     <GROUP id="{26DEFCEF-2D1D-38DD-DD13-7B4929DB7BC6}" name="Source">
+      <FILE id="VyT0u4" name="magic.xml" compile="0" resource="1" file="Source/magic.xml"/>
       <FILE id="XYAYz6" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="AFyJ7Y" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
@@ -21,7 +22,8 @@
       <FILE id="xT4c43" name="NonLinAllpass.h" compile="0" resource="0" file="Source/NonLinAllpass.h"/>
     </GROUP>
   </MAINGROUP>
-  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"
+               FOLEYS_ENABLE_BINARY_DATA="1" FOLEYS_SHOW_GUI_EDITOR_PALLETTE="1"/>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX">
       <CONFIGURATIONS>
