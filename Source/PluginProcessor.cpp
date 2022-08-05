@@ -13,19 +13,14 @@
 
 //==============================================================================
 KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
-#ifndef JucePlugin_PreferredChannelConfigurations
-    : AudioProcessor(BusesProperties()
-#if ! JucePlugin_IsMidiEffect
-#if ! JucePlugin_IsSynth
-        .withInput("Input", juce::AudioChannelSet::stereo(), true)
-#endif
-        .withOutput("Output", juce::AudioChannelSet::stereo(), true)
-#endif
-    ),
-#endif
+: foleys::MagicProcessor  (juce::AudioProcessor::BusesProperties()
+                           .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
     apvts(*this, nullptr, "ParamTreeID", createParams())
-
 {
+    FOLEYS_SET_SOURCE_PATH (__FILE__);
+    
+    // ====== HERE YOU CAN ADD THE VISUALISATION =======
+    
     // ====== CONSTRUCTOR TO SET UP POLYPHONY =======
     for (int i = 0; i < voiceCount; i++)
     {
@@ -178,7 +173,6 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
             auto& feedbackParam = *apvts.getRawParameterValue("FEEDBACK");
             auto& velToFeedbackParam = *apvts.getRawParameterValue("VELTOFEEDBACK");
             
-            auto& releaseParam = *apvts.getRawParameterValue("RELEASE");
             auto& volumeParam = *apvts.getRawParameterValue("VOLUME");
             
             // ====== CONVERT ATOMIC PARAMETERS TO FLOATS =======
@@ -199,7 +193,6 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
                                         feedbackParam.load(),
                                         velToFeedbackParam.load(),
             
-                                        releaseParam.load(),
                                         volumeParam.load()
                 );
         }
@@ -217,7 +210,8 @@ bool KarPlusPlus2AudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* KarPlusPlus2AudioProcessor::createEditor()
 {
-    return new juce::GenericAudioProcessorEditor(*this);
+//    return new juce::GenericAudioProcessorEditor(*this);
+    return new foleys::MagicPluginEditor (magicState);
 }
 
 //==============================================================================
@@ -272,7 +266,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout KarPlusPlus2AudioProcessor::
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"FEEDBACK", 1}, "Feedback", 0.0f, 1.0f, 0.9f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VELTOFEEDBACK", 1}, "Vel -> Feedback", 0.0f, 1.0f, 0.1f));
 
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"RELEASE", 1}, "Release", 0.0f, 10.0f, 5.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID {"VOLUME", 1}, "Volume", 0.0f, 1.0f, 0.7f));
 
     // Return Parameter Layout

@@ -16,7 +16,7 @@
 //==============================================================================
 /**
 */
-class KarPlusPlus2AudioProcessor : public juce::AudioProcessor
+class KarPlusPlus2AudioProcessor : public foleys::MagicProcessor
 {
 public:
     //==============================================================================
