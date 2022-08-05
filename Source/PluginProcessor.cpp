@@ -205,17 +205,17 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
 }
 
 //==============================================================================
-bool KarPlusPlus2AudioProcessor::hasEditor() const
-{
-    return false; // (change this to false if you choose to not supply an editor)
-}
-
-juce::AudioProcessorEditor* KarPlusPlus2AudioProcessor::createEditor()
-{
-//    return new juce::GenericAudioProcessorEditor(*this);
-    return new foleys::MagicPluginEditor (magicState);
-//    return new foleys::MagicPluginEditor (magicState, BinaryData::magic_xml, BinaryData::magic_xmlSize);
-}
+//bool KarPlusPlus2AudioProcessor::hasEditor() const
+//{
+//    return false; // (change this to false if you choose to not supply an editor)
+//}
+//
+//juce::AudioProcessorEditor* KarPlusPlus2AudioProcessor::createEditor()
+//{
+////    return new juce::GenericAudioProcessorEditor(*this);
+//    return new foleys::MagicPluginEditor (magicState);
+////    return new foleys::MagicPluginEditor (magicState, BinaryData::magic_xml, BinaryData::magic_xmlSize);
+//}
 
 //==============================================================================
 void KarPlusPlus2AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
