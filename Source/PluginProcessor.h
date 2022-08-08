@@ -56,11 +56,16 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    //==============================================================================
     juce::AudioProcessorValueTreeState apvts; // Needs to be public
+    static void addVelToParams (juce::AudioProcessorValueTreeState::ParameterLayout& layout);
     
     
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
+    juce::AudioProcessorValueTreeState::ParameterLayout addVelToParams();
+    
+
     
     juce::Synthesiser synth;
     int voiceCount = 12;
