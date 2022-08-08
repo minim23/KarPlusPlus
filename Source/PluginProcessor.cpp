@@ -152,6 +152,8 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
 {
     juce::ScopedNoDenormals noDenormals;
     
+    magicState.processMidiBuffer (midiMessages, buffer.getNumSamples());
+    
     // ====== UPDATE PARAMETERS =======
     for (int i = 0; i < synth.getNumVoices(); ++i)
     {
@@ -210,25 +212,26 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
 //    return false; // (change this to false if you choose to not supply an editor)
 //}
 //
+
 //juce::AudioProcessorEditor* KarPlusPlus2AudioProcessor::createEditor()
 //{
 ////    return new juce::GenericAudioProcessorEditor(*this);
-//    return new foleys::MagicPluginEditor (magicState);
-////    return new foleys::MagicPluginEditor (magicState, BinaryData::magic_xml, BinaryData::magic_xmlSize);
+////  return new foleys::MagicPluginEditor (magicState);
+////    return new foleys::MagicPluginEditor (magicState, BinaryData::magic1_xml, BinaryData::magic1_xmlSize);
 //}
 
 //==============================================================================
 void KarPlusPlus2AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    // getStateInformation
     auto state = apvts.copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
+    
+//    magicState.getStateInformation (destData);
 }
 
 void KarPlusPlus2AudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
-    // setStateInformation
     std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
     if (xmlState.get() != nullptr)
     {
@@ -237,6 +240,8 @@ void KarPlusPlus2AudioProcessor::setStateInformation(const void* data, int sizeI
             apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
         }
     }
+    
+//    magicState.setStateInformation (data, sizeInBytes);
 }
 
 //==============================================================================

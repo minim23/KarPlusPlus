@@ -4,8 +4,11 @@
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               companyName="Simon Weins" companyWebsite="www.simonweins.co.uk">
   <MAINGROUP id="RoSkKU" name="KarPlusPlus2">
-    <GROUP id="{26DEFCEF-2D1D-38DD-DD13-7B4929DB7BC6}" name="Source">
+    <GROUP id="{54068CBB-6E0A-1B4D-F956-410F51E993B7}" name="Resources">
       <FILE id="VyT0u4" name="magic.xml" compile="0" resource="1" file="Source/magic.xml"/>
+      <FILE id="o75Djc" name="magic1.xml" compile="0" resource="1" file="Source/magic1.xml"/>
+    </GROUP>
+    <GROUP id="{26DEFCEF-2D1D-38DD-DD13-7B4929DB7BC6}" name="Source">
       <FILE id="XYAYz6" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="AFyJ7Y" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
