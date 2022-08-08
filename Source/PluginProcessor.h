@@ -16,7 +16,7 @@
 //==============================================================================
 /**
 */
-class KarPlusPlus2AudioProcessor : public juce::AudioProcessor
+class KarPlusPlus2AudioProcessor : public foleys::MagicProcessor
 {
 public:
     //==============================================================================
@@ -34,8 +34,8 @@ public:
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==============================================================================
-    juce::AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override;
+//    juce::AudioProcessorEditor* createEditor() override;
+//    bool hasEditor() const override;
 
     //==============================================================================
     const juce::String getName() const override;
@@ -56,13 +56,21 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    //==============================================================================
     juce::AudioProcessorValueTreeState apvts; // Needs to be public
+    static void addVelToParams (juce::AudioProcessorValueTreeState::ParameterLayout& layout);
+    
     
 private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
+    juce::AudioProcessorValueTreeState::ParameterLayout addVelToParams();
+    
+
     
     juce::Synthesiser synth;
     int voiceCount = 12;
+    
+//    foleys::MagicProcessorState magicState { *this, apvts };
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(KarPlusPlus2AudioProcessor)

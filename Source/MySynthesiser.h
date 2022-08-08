@@ -52,7 +52,6 @@ public:
                               float feedbackParam,
                               float velToFeedbackParam,
   
-                              float releaseParam,
                               float volumeParam
     )
     {
@@ -71,7 +70,6 @@ public:
         feedback = feedbackParam;
         velToFeedbackAmount = velToFeedbackParam;
 
-        release = releaseParam;
         volume = volumeParam;
     }
 
@@ -248,7 +246,6 @@ private:
     float feedback;
     float velToFeedbackAmount;
     
-    float release;
     float volume;
     
     // ====== VELOCITY RELATIVE VALUES =======
