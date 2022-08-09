@@ -65,7 +65,7 @@ private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     juce::AudioProcessorValueTreeState::ParameterLayout addVelToParams();
     
-
+    foleys::MagicPlotSource* analyser = nullptr;
     
     juce::Synthesiser synth;
     int voiceCount = 12;

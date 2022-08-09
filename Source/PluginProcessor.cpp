@@ -23,6 +23,9 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
     
     // ====== HERE YOU CAN ADD THE VISUALISATION =======
     
+    
+    analyser = magicState.createAndAddObject<foleys::MagicAnalyser>("input");
+    
     // ====== CONSTRUCTOR TO SET UP POLYPHONY =======
     for (int i = 0; i < voiceCount; i++)
     {
@@ -109,6 +112,8 @@ void KarPlusPlus2AudioProcessor::changeProgramName(int index, const juce::String
 void KarPlusPlus2AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     synth.setCurrentPlaybackSampleRate(sampleRate);
+    
+    analyser->prepareToPlay (sampleRate, samplesPerBlock);
 
     for (int i = 0; i < voiceCount; i++)
     {
@@ -204,6 +209,7 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
 
     // ====== DSP PROCESSING =======
     synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+    analyser->pushSamples (buffer);
 }
 
 //==============================================================================
@@ -217,17 +223,17 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
 //{
 ////    return new juce::GenericAudioProcessorEditor(*this);
 ////  return new foleys::MagicPluginEditor (magicState);
-////    return new foleys::MagicPluginEditor (magicState, BinaryData::magic1_xml, BinaryData::magic1_xmlSize);
+////    return new foleys::MagicPluginEditor (magicState, BinaryData::magic1_xml, BinaryData::magic1_xmlSize); // THIS SHOULD POINT TO THE CORRECT SIZE
 //}
 
 //==============================================================================
 void KarPlusPlus2AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    auto state = apvts.copyState();
-    std::unique_ptr<juce::XmlElement> xml(state.createXml());
-    copyXmlToBinary(*xml, destData);
+//    auto state = apvts.copyState();
+//    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+//    copyXmlToBinary(*xml, destData);
     
-//    magicState.getStateInformation (destData);
+    magicState.getStateInformation (destData);
 }
 
 void KarPlusPlus2AudioProcessor::setStateInformation(const void* data, int sizeInBytes)
@@ -241,7 +247,7 @@ void KarPlusPlus2AudioProcessor::setStateInformation(const void* data, int sizeI
         }
     }
     
-//    magicState.setStateInformation (data, sizeInBytes);
+//    magicState.setStateInformation (data, sizeInBytes, getActiveEditor());
 }
 
 //==============================================================================
