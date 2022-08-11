@@ -7,6 +7,7 @@
     <GROUP id="{54068CBB-6E0A-1B4D-F956-410F51E993B7}" name="Resources">
       <FILE id="VyT0u4" name="magic.xml" compile="0" resource="1" file="Source/magic.xml"/>
       <FILE id="o75Djc" name="magic1.xml" compile="0" resource="1" file="Source/magic1.xml"/>
+      <FILE id="dgQgN7" name="magic2.xml" compile="0" resource="1" file="Source/magic2.xml"/>
     </GROUP>
     <GROUP id="{26DEFCEF-2D1D-38DD-DD13-7B4929DB7BC6}" name="Source">
       <FILE id="XYAYz6" name="PluginEditor.cpp" compile="1" resource="0"

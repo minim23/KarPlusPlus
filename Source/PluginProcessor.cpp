@@ -17,13 +17,12 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
                            .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
     apvts (*this, nullptr, "ParamTreeID", createParams())
 {
-    FOLEYS_SET_SOURCE_PATH (__FILE__);
+
     
-//    foleys::MagicProcessorState magicState { *this, apvts };
+    // ====== GUI MAGIC =======
     
-    // ====== HERE YOU CAN ADD THE VISUALISATION =======
-    
-    
+    //    FOLEYS_SET_SOURCE_PATH (__FILE__);
+    magicState.setGuiValueTree (BinaryData::magic2_xml, BinaryData::magic2_xmlSize); // Load custom GUI
     analyser = magicState.createAndAddObject<foleys::MagicAnalyser>("input");
     
     // ====== CONSTRUCTOR TO SET UP POLYPHONY =======
@@ -223,32 +222,32 @@ void KarPlusPlus2AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, 
 //{
 ////    return new juce::GenericAudioProcessorEditor(*this);
 ////  return new foleys::MagicPluginEditor (magicState);
-////    return new foleys::MagicPluginEditor (magicState, BinaryData::magic1_xml, BinaryData::magic1_xmlSize); // THIS SHOULD POINT TO THE CORRECT SIZE
+//    return new foleys::MagicPluginEditor (magicState); // , BinaryData::magic1_xml , BinaryData::magic1_xmlSize THIS SHOULD POINT TO THE CORRECT SIZE
 //}
 
 //==============================================================================
-void KarPlusPlus2AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
-{
-//    auto state = apvts.copyState();
-//    std::unique_ptr<juce::XmlElement> xml(state.createXml());
-//    copyXmlToBinary(*xml, destData);
-    
-    magicState.getStateInformation (destData);
-}
-
-void KarPlusPlus2AudioProcessor::setStateInformation(const void* data, int sizeInBytes)
-{
-    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
-    if (xmlState.get() != nullptr)
-    {
-        if (xmlState->hasTagName(apvts.state.getType()))
-        {
-            apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
-        }
-    }
-    
-//    magicState.setStateInformation (data, sizeInBytes, getActiveEditor());
-}
+//void KarPlusPlus2AudioProcessor::getStateInformation(juce::MemoryBlock& destData)
+//{
+////    auto state = apvts.copyState();
+////    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+////    copyXmlToBinary(*xml, destData);
+//
+//    magicState.getStateInformation (destData);
+//}
+//
+//void KarPlusPlus2AudioProcessor::setStateInformation(const void* data, int sizeInBytes)
+//{
+//    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+//    if (xmlState.get() != nullptr)
+//    {
+//        if (xmlState->hasTagName(apvts.state.getType()))
+//        {
+//            apvts.replaceState(juce::ValueTree::fromXml(*xmlState));
+//        }
+//    }
+//
+////    magicState.setStateInformation (data, sizeInBytes, getActiveEditor());
+//}
 
 //==============================================================================
 // This creates new instances of the plugin..
