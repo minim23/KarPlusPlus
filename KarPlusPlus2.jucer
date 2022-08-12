@@ -4,12 +4,19 @@
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1"
               companyName="Simon Weins" companyWebsite="www.simonweins.co.uk">
   <MAINGROUP id="RoSkKU" name="KarPlusPlus2">
-    <GROUP id="{54068CBB-6E0A-1B4D-F956-410F51E993B7}" name="Resources">
-      <FILE id="VyT0u4" name="magic.xml" compile="0" resource="1" file="Source/magic.xml"/>
-      <FILE id="o75Djc" name="magic1.xml" compile="0" resource="1" file="Source/magic1.xml"/>
-      <FILE id="dgQgN7" name="magic2.xml" compile="0" resource="1" file="Source/magic2.xml"/>
-    </GROUP>
     <GROUP id="{26DEFCEF-2D1D-38DD-DD13-7B4929DB7BC6}" name="Source">
+      <GROUP id="{F5AC8866-5651-254D-EB6F-EABB7A363855}" name="Data">
+        <FILE id="jhU3Ox" name="ADSR.h" compile="0" resource="0" file="Source/Data/ADSR.h"/>
+        <FILE id="WyoJS1" name="Excitation.h" compile="0" resource="0" file="Source/Data/Excitation.h"/>
+        <FILE id="EYgliY" name="FeedbackDelay.h" compile="0" resource="0" file="Source/Data/FeedbackDelay.h"/>
+        <FILE id="m07KTl" name="Filterbank.h" compile="0" resource="0" file="Source/Data/Filterbank.h"/>
+        <FILE id="YmJPwM" name="NonLinAllpass.h" compile="0" resource="0" file="Source/Data/NonLinAllpass.h"/>
+        <FILE id="UJwJRt" name="StringModel.h" compile="0" resource="0" file="Source/Data/StringModel.h"/>
+        <FILE id="mVBjsm" name="OscData.h" compile="0" resource="0" file="Source/Data/OscData.h"/>
+      </GROUP>
+      <GROUP id="{54068CBB-6E0A-1B4D-F956-410F51E993B7}" name="Resources">
+        <FILE id="ByCBcR" name="magic2.xml" compile="0" resource="1" file="Source/Resources/magic2.xml"/>
+      </GROUP>
       <FILE id="XYAYz6" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="AFyJ7Y" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
@@ -18,12 +25,6 @@
       <FILE id="kVv2Md" name="PluginProcessor.h" compile="0" resource="0"
             file="Source/PluginProcessor.h"/>
       <FILE id="iTw78l" name="MySynthesiser.h" compile="0" resource="0" file="Source/MySynthesiser.h"/>
-      <FILE id="mD98mX" name="FeedbackDelay.h" compile="0" resource="0" file="Source/FeedbackDelay.h"/>
-      <FILE id="X9DoZV" name="StringModel.h" compile="0" resource="0" file="Source/StringModel.h"/>
-      <FILE id="cwcJQM" name="ADSR.h" compile="0" resource="0" file="Source/ADSR.h"/>
-      <FILE id="oxZzjO" name="Excitation.h" compile="0" resource="0" file="Source/Excitation.h"/>
-      <FILE id="uV0mQH" name="Filterbank.h" compile="0" resource="0" file="Source/Filterbank.h"/>
-      <FILE id="xT4c43" name="NonLinAllpass.h" compile="0" resource="0" file="Source/NonLinAllpass.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"

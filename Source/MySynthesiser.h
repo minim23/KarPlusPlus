@@ -1,8 +1,8 @@
 #pragma once
-#include "StringModel.h"
-#include "Excitation.h"
-#include "ADSR.h"
-#include "Filterbank.h"
+#include "Data/StringModel.h"
+#include "Data/Excitation.h"
+#include "Data/ADSR.h"
+#include "Data/Filterbank.h"
 
 // ===========================
 // ===========================
