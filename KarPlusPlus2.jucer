@@ -8,14 +8,12 @@
       <GROUP id="{F5AC8866-5651-254D-EB6F-EABB7A363855}" name="Data">
         <FILE id="VVyUDG" name="Oscillators.h" compile="0" resource="0" file="Source/Data/Oscillators.h"/>
         <FILE id="jhU3Ox" name="ADSR.h" compile="0" resource="0" file="Source/Data/ADSR.h"/>
-        <FILE id="WyoJS1" name="Excitation.h" compile="0" resource="0" file="Source/Data/Excitation.h"/>
         <FILE id="EYgliY" name="FeedbackDelay.h" compile="0" resource="0" file="Source/Data/FeedbackDelay.h"/>
-        <FILE id="m07KTl" name="Filterbank.h" compile="0" resource="0" file="Source/Data/Filterbank.h"/>
         <FILE id="YmJPwM" name="NonLinAllpass.h" compile="0" resource="0" file="Source/Data/NonLinAllpass.h"/>
         <FILE id="UJwJRt" name="StringModel.h" compile="0" resource="0" file="Source/Data/StringModel.h"/>
-        <FILE id="mVBjsm" name="OscData.h" compile="0" resource="0" file="Source/Data/OscData.h"/>
       </GROUP>
       <GROUP id="{54068CBB-6E0A-1B4D-F956-410F51E993B7}" name="Resources">
+        <FILE id="l2pwIs" name="GUImagic.xml" compile="0" resource="1" file="Source/Resources/GUImagic.xml"/>
         <FILE id="ByCBcR" name="magic2.xml" compile="0" resource="1" file="Source/Resources/magic2.xml"/>
       </GROUP>
       <FILE id="XYAYz6" name="PluginEditor.cpp" compile="1" resource="0"

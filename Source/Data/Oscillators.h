@@ -62,17 +62,17 @@ public:
     float output (float p) override
     {
         // SINE
-        if ((waveType = 0)) {
+        if (waveType == 0) {
             return std::sin (p * 2.0f * 3.141592653);
         }
         
         // TRIANGLE
-        if ((waveType = 1)) {
+        if (waveType == 1) {
             return fabsf (p - 0.5f) - 0.5f;
         }
         
         // SQUARE
-        if ((waveType = 2)) {
+        if (waveType == 2) {
             float outVal = 0.5;
             if (p > 0.5) // Fixed Pulsewidth
                 outVal = -5;
@@ -80,12 +80,12 @@ public:
         }
         
         // SAW
-        if ((waveType = 3)) {
+        if (waveType == 3) {
             return p;
         }
         
         // WHITE NOISE
-        if ((waveType = 4)) {
+        if (waveType == 4) {
             float noise = (random.nextFloat() - 0.5) * 2.0f;
             return noise;
         }

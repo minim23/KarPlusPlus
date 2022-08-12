@@ -2,10 +2,6 @@
 #include "Data/StringModel.h"
 #include "Data/ADSR.h"
 #include "Data/Oscillators.h"
-// #include "Data/OscData.h"
-
-#include "Data/Excitation.h" // THIS CAN GO
-
 
 class MySynthSound : public juce::SynthesiserSound
 {
@@ -23,38 +19,40 @@ public:
 
     // ====== INITIALIZATE PARAMETER POINTERS =======
     void setParameterPointers(
-                              float dampExParam,
-                              float velToDampExParam,
+                              float attackParam,
+                              float decayParam,
                               float sustainParam,
-                              float velToSustainParam,
+                              float releaseParam,
                               
-                              float formantWidthParam,
-                              float velToFormantWParam,
-                              float formantQParam,
-                              float velToFormantQParam,
+                              float oscWaveParam,
+                              
+                              float loPassParam,
                           
                               float dampStringParam,
-                              float velToDampStringParam,
                               float feedbackParam,
+                              
+                              float velToLoPassParam,
+                              float velToDampStringParam,
                               float velToFeedbackParam,
   
                               float volumeParam
     )
     {
-        dampExcitation = dampExParam;
-        velToDampExAmount = velToDampExParam;
-        sustainExcitation = sustainParam;
-        velToSustainExAmount = velToSustainParam;
-        
-        formantWidth = formantWidthParam;
-        velToFormantWAmount = velToFormantWParam;
-        formantQ = formantQParam;
-        velToFormantQAmount = velToFormantQParam;
-        
-        dampenString = dampStringParam;
-        velToDampenStAmount = velToDampStringParam;
+        attack = attackParam;
+        decay = decayParam;
+        sustain = sustainParam;
+        release = releaseParam;
+       
+        oscType = oscWaveParam;
+       
+        loPass = loPassParam;
+       
+        dampening = dampStringParam;
         feedback = feedbackParam;
-        velToFeedbackAmount = velToFeedbackParam;
+       
+        velToLoPass = velToLoPassParam;
+        velToDampening = velToDampStringParam;
+        velToFeedback = velToFeedbackParam;
 
         volume = volumeParam;
     }
@@ -63,7 +61,6 @@ public:
     void prepareToPlay(int sampleRate, int samplesPerBlock, int outputChannels)
     {
         // SET SAMPLERATE
-        excitation.setSamplerate (sampleRate);
         karplusStrong.setSamplerate (sampleRate);
         osc.setSampleRate (sampleRate);
         
@@ -93,19 +90,17 @@ public:
         ending = false;
         
         // ====== RElATIVE VELOCITY VALUES =======
-        velToDampenExcitation = velToParam (dampExcitation, velocity, velToDampExAmount);
-        velToSustainExcitation = velToParam (sustainExcitation, velocity, velToSustainExAmount);
-        velToFormantWidth = velToParam (formantWidth, velocity, velToFormantWAmount);
-        velToFormantQ = velToParam (formantQ, velocity, velToFormantQAmount);
-        velToDampenString = velToParam (dampenString, velocity, velToDampenStAmount);
-        velToFeedback = velToParam (feedback, velocity, velToFeedbackAmount);
+        velToLoPass = velToParam (loPass, velocity, velToLoPass);
+        velToDampening = velToParam (dampening, velocity, velToDampening);
+        velToFeedback = velToParam (feedback, velocity, velToFeedback);
 
-        velToVol = velToParam (volume, velocity, 1.0f);
+        float velToVol = velToParam (volume, velocity, 1.0f);
 
         // ====== SET NOTE PARAMETERS =======
-        excitation.setDampening (velToDampenExcitation);
-        karplusStrong.setDampening (velToDampenString);
+        osc.setWaveType (oscType);
+        //excitation.setDampening (velToLoPass);
         
+        karplusStrong.setDampening (velToDampening);
         karplusStrong.setFeedback (velToFeedback);
         
         freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber);
@@ -118,7 +113,7 @@ public:
         
         // ====== CALCULATE RELEASE TIME OF ADSR BASED ON FEEDBACK AND FREQUENCY =======
         float hzToMs = 1 / freq;
-        relativeSustainTime = velToFeedback * hzToMs * 1000;
+        relativeSustainTime = velToFeedback * hzToMs * 10000;
         
         // ====== TRIGGER ENVELOPES =======
         generalADSR.reset(); // clear out envelope before re-triggering it
@@ -147,7 +142,7 @@ public:
             return;
 
         // ====== ADSR =======
-        impulseADSR.updateADSR (0.01f, 0.1f, velToSustainExcitation * 0.3, 0.02f);
+        impulseADSR.updateADSR (attack, decay, sustain, release);
         generalADSR.updateADSR (0.1, relativeSustainTime, 1.0f, relativeSustainTime);
 
         // ====== DSP LOOP =======
@@ -200,40 +195,29 @@ private:
     bool isPrepared { false };
 
     // ====== PARAMETER VALUES ======= 
-    float dampExcitation;
-    float velToDampExAmount;
-    float sustainExcitation;
-    float velToSustainExAmount;
+    float attack;
+    float decay;
+    float sustain;
+    float release;
     
-    float formantWidth;
-    float velToFormantWAmount;
-    float formantQ;
-    float velToFormantQAmount;
+    float oscType;
     
-    float dampenString;
-    float velToDampenStAmount;
+    float loPass;
+    
+    float dampening;
     float feedback;
-    float velToFeedbackAmount;
     
-    float volume;
+    float velToLoPass;
     
-    // ====== VELOCITY RELATIVE VALUES =======
-    float velToDampenExcitation;
-    float velToSustainExcitation;
-    
-    float velToFormantWidth;
-    float velToFormantQ;
-    
-    float velToDampenString;
+    float velToDampening;
     float velToFeedback;
     
-    float velToVol;
+    float volume;
     
     // ====== ENVELOPES =======
     ADSRData generalADSR, impulseADSR;
     float relativeSustainTime;
 
-    Excitation excitation;
     juce::Random random;
     juce::IIRFilter dcBlock;
     

@@ -58,7 +58,6 @@ public:
 
     //==============================================================================
     juce::AudioProcessorValueTreeState apvts; // Needs to be public
-    static void addVelToParams (juce::AudioProcessorValueTreeState::ParameterLayout& layout);
     
     
 private:
