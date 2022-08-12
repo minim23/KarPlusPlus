@@ -17,8 +17,6 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
                            .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
     apvts (*this, nullptr, "ParamTreeID", createParams())
 {
-
-    
     // ====== GUI MAGIC =======
     
     //    FOLEYS_SET_SOURCE_PATH (__FILE__);

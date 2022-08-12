@@ -65,7 +65,7 @@ public:
         // SET SAMPLERATE
         excitation.setSamplerate (sampleRate);
         karplusStrong.setSamplerate (sampleRate);
-        triOsc.setSampleRate (sampleRate);
+        osc.setSampleRate (sampleRate);
         
         sr = sampleRate;
         
@@ -110,7 +110,8 @@ public:
         
         freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber);
         karplusStrong.setPitch (freq);
-        triOsc.setFrequency (freq);
+        osc.setFrequency (freq);
+        dcBlock.setCoefficients (juce::IIRCoefficients::makeHighPass (sr, freq));
 
         vol = velToVol;
         
@@ -146,8 +147,8 @@ public:
             return;
 
         // ====== ADSR =======
-        generalADSR.updateADSR (0.1, relativeSustainTime, 1.0f, relativeSustainTime);
         impulseADSR.updateADSR (0.01f, 0.1f, velToSustainExcitation * 0.3, 0.02f);
+        generalADSR.updateADSR (0.1, relativeSustainTime, 1.0f, relativeSustainTime);
 
         // ====== DSP LOOP =======
         for (int sampleIndex = startSample; sampleIndex < (startSample + numSamples); sampleIndex++)
@@ -156,12 +157,15 @@ public:
             float globalEnv = generalADSR.getNextSample(); // Global envelope
             float impulseEnv = impulseADSR.getNextSample(); // White Noise envelope
                             
-            // ====== CHANNEL ASSIGNMENT ======= THIS COULD BE REFACTORED
+            // ====== CHANNEL ASSIGNMENT =======
             for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
             {
                 // ====== STEREO DSP =======
-                float currentSample = triOsc.process();
+                float currentSample;
+                currentSample = osc.process();
+                currentSample = dcBlock.processSingleSampleRaw (currentSample);
                 currentSample *= impulseEnv;
+                
                 currentSample = karplusStrong.process (currentSample);
                 
                 currentSample *= globalEnv; // ADSR
@@ -231,10 +235,11 @@ private:
 
     Excitation excitation;
     juce::Random random;
+    juce::IIRFilter dcBlock;
     
     KarplusStrong karplusStrong;
-
-    TriOsc triOsc;
+    
+    Oscillator osc;
     
 
     float freq; // Frequency of Synth

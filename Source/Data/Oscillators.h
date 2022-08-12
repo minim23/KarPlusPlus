@@ -8,14 +8,13 @@
 class Phasor
 {
 public:
-    // ====== CONSTRUCTOR / DESTRUCTOR =======
     Phasor() {}
     
     virtual ~Phasor()
     {
     }
     
-    // update phase and output the next sample from oscillator
+    // Update phase and output next sample
     float process()
     {
         phase += phaseDelta;
@@ -26,7 +25,7 @@ public:
         return output (phase);
     }
     
-    // this function is the one that we will replace in the classes that inherit from Phasor
+    // this function can be replaced
     virtual float output(float p)
     {
         return p;
@@ -50,44 +49,61 @@ private:
     float phaseDelta;
 };
 
-// TRIOSC CHILD Class
-class TriOsc : public Phasor
+    
+class Oscillator : public Phasor
 {
-    // redefine (override) the output function so that we can return a different function of the phase (p)
-    float output(float p) override
-    {
-        return fabsf(p - 0.5f) - 0.5f;
-    }
-};
-
-// SINEOSC CHILD Class
-class SineOsc : public Phasor
-{
-    // redefine (override) the output function so that we can return a different function of the phase (p)
-    float output(float p) override
-    {
-        return std::sin(p * 2.0f * 3.141592653);
-    }
-};
-
-// SQUAREOSC CHILD Class
-class SquareOsc : public Phasor
-{
-    // redefine (override) the output function so that we can return a different function of the phase (p)
 public:
-    float output(float p) override
+
+    void setWaveType (const int choice)
     {
-        float outVal = 0.5;
-        if (p > pulseWidth)
-            outVal = -5;
-        return outVal;
+        waveType = choice;
     }
-    void setPulseWidth(float pw)
+    
+    float output (float p) override
     {
-        pulseWidth = pw;
+        // SINE
+        if ((waveType = 0)) {
+            return std::sin (p * 2.0f * 3.141592653);
+        }
+        
+        // TRIANGLE
+        if ((waveType = 1)) {
+            return fabsf (p - 0.5f) - 0.5f;
+        }
+        
+        // SQUARE
+        if ((waveType = 2)) {
+            float outVal = 0.5;
+            if (p > 0.5) // Fixed Pulsewidth
+                outVal = -5;
+            return outVal;
+        }
+        
+        // SAW
+        if ((waveType = 3)) {
+            return p;
+        }
+        
+        // WHITE NOISE
+        if ((waveType = 4)) {
+            float noise = (random.nextFloat() - 0.5) * 2.0f;
+            return noise;
+        }
+        
+        // BREAK PROGRAM OTHERWISE
+        else
+        {
+            return p;
+            jassertfalse;
+        }
     }
+    
+    
 private:
-    float pulseWidth = 0.5f;
+    juce::Random random;
+    
+    int waveType;
 };
+
 
 #endif /* Oscillators_h */

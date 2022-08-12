@@ -20,7 +20,8 @@ public:
         * (sr / 2)  // Multiplies dampening by Nyquist Frequency
                             * 0.99f; // Get practical value
 
-        dampen.setCoefficients(juce::IIRCoefficients::makeLowPass(sr, filterFreq, 1.0f));
+        dampen.setCoefficients (juce::IIRCoefficients::makeLowPass(sr, filterFreq, 1.0f));
+        dcBlock.setCoefficients (juce::IIRCoefficients::makeHighPass(sr, filterFreq));
     }
     
     // ====== PITCH WITH INSTABILITY =======
@@ -38,14 +39,13 @@ public:
     {
         float outVal = readVal();
         
-        float nonLinearAllpass = allpass.process (outVal);
+        float currentSample = allpass.process (outVal);
         
-        float transferFunc = clip (nonLinearAllpass);
-        float dampString = loPass (transferFunc); // process through IRR Filter
-        //float dampString = dampen.processSingleSampleRaw (transferFunc);
+        currentSample = clip (currentSample);
+        currentSample = loPass (currentSample); // process through IRR Filter
         
-        writeVal (inSamp + feedback * dampString); // Feedback scales output back into input
-        float floor (dampString); // Calculate interpolation
+        writeVal (inSamp + feedback * currentSample); // Feedback scales output back into input
+        float floor (currentSample); // Calculate interpolation
         return floor;
     }
     
@@ -78,14 +78,15 @@ public:
     
     float loPass (float& inSamp)
     {
-        float dampenedString = dampen.processSingleSampleRaw (inSamp); // process through IRR Filter
-        dampen.processSingleSampleRaw (dampenedString);
+        float currentSample = dampen.processSingleSampleRaw (inSamp); // process through IRR Filter
+        dampen.processSingleSampleRaw (currentSample);
+        dcBlock.processSingleSampleRaw (currentSample);
         
-        return dampenedString;
+        return currentSample;
     }
 
 private:
-    juce::IIRFilter dampen;
+    juce::IIRFilter dampen, dcBlock;
     juce::Random random;
     
     // ====== ALLPASS =======
