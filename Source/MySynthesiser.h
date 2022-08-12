@@ -1,8 +1,10 @@
 #pragma once
 #include "Data/StringModel.h"
-#include "Data/Excitation.h"
 #include "Data/ADSR.h"
-#include "Data/Filterbank.h"
+#include "Data/OscData.h"
+
+#include "Data/Excitation.h" // THIS CAN GO
+#include "Data/Filterbank.h" // THIS CAN GO
 
 // ===========================
 // ===========================
