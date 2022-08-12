@@ -1,27 +1,21 @@
-//
-//  Oscillators.h
-//  Week4MoreClasses
-//
-//  Created by tmudd on 03/02/2020.
-//  Copyright © 2020 tmudd. All rights reserved.
-//
-
 #include <math.h>
 #include <cmath>
 
 #ifndef Oscillators_h
 #define Oscillators_h
 
-// BASE class - a basic
+// PHASOR PARENT Class
 class Phasor
 {
 public:
+    // ====== CONSTRUCTOR / DESTRUCTOR =======
+    Phasor() {}
     
-    // Our parent oscillator class does the key things required for most oscillators:
-    // -- handles phase
-    // -- handles setters and getters for frequency and samplerate
+    virtual ~Phasor()
+    {
+    }
     
-    /// update the phase and output the next sample from the oscillator
+    // update phase and output the next sample from oscillator
     float process()
     {
         phase += phaseDelta;
@@ -29,10 +23,10 @@ public:
         if (phase > 1.0f)
             phase -= 1.0f;
         
-        return output(phase);
+        return output (phase);
     }
     
-    /// this function is the one that we will replace in the classes that inherit from Phasor
+    // this function is the one that we will replace in the classes that inherit from Phasor
     virtual float output(float p)
     {
         return p;

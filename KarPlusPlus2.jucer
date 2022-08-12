@@ -6,6 +6,7 @@
   <MAINGROUP id="RoSkKU" name="KarPlusPlus2">
     <GROUP id="{26DEFCEF-2D1D-38DD-DD13-7B4929DB7BC6}" name="Source">
       <GROUP id="{F5AC8866-5651-254D-EB6F-EABB7A363855}" name="Data">
+        <FILE id="VVyUDG" name="Oscillators.h" compile="0" resource="0" file="Source/Data/Oscillators.h"/>
         <FILE id="jhU3Ox" name="ADSR.h" compile="0" resource="0" file="Source/Data/ADSR.h"/>
         <FILE id="WyoJS1" name="Excitation.h" compile="0" resource="0" file="Source/Data/Excitation.h"/>
         <FILE id="EYgliY" name="FeedbackDelay.h" compile="0" resource="0" file="Source/Data/FeedbackDelay.h"/>

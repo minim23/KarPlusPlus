@@ -1,14 +1,12 @@
 #pragma once
 #include "Data/StringModel.h"
 #include "Data/ADSR.h"
-#include "Data/OscData.h"
+#include "Data/Oscillators.h"
+// #include "Data/OscData.h"
 
 #include "Data/Excitation.h" // THIS CAN GO
-#include "Data/Filterbank.h" // THIS CAN GO
 
-// ===========================
-// ===========================
-// SOUND
+
 class MySynthSound : public juce::SynthesiserSound
 {
 public:
@@ -18,20 +16,6 @@ public:
 };
 
 
-
-
-// =================================
-// =================================
-// Synthesiser Voice - My synth code goes in here
-
-/*!
- @class MySynthVoice
- @abstract struct defining the DSP associated with a specific voice.
- @discussion multiple MySynthVoice objects will be created by the Synthesiser so that it can be played polyphicially
- 
- @namespace none
- @updated 2019-06-18
- */
 class MySynthVoice : public juce::SynthesiserVoice
 {
 public:
@@ -76,11 +60,12 @@ public:
     }
 
     // ====== SAMPLERATE SETUP FOR PREPARE TO PLAY =======
-    void prepareToPlay(int sampleRate)
+    void prepareToPlay(int sampleRate, int samplesPerBlock, int outputChannels)
     {
+        // SET SAMPLERATE
         excitation.setSamplerate (sampleRate);
-        formants.setSamplerate (sampleRate);
         karplusStrong.setSamplerate (sampleRate);
+        triOsc.setSampleRate (sampleRate);
         
         sr = sampleRate;
         
@@ -101,21 +86,11 @@ public:
         return velToParam;
     }
     
-    //--------------------------------------------------------------------------
-    /**
-     What should be done when a note starts
 
-     @param midiNoteNumber
-     @param velocity
-     @param SynthesiserSound unused variable
-     @param / unused variable
-     */
     void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound*, int /*currentPitchWheelPosition*/) override
     {
         playing = true;
         ending = false;
-
-        freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber); // Get frequency
         
         // ====== RElATIVE VELOCITY VALUES =======
         velToDampenExcitation = velToParam (dampExcitation, velocity, velToDampExAmount);
@@ -130,9 +105,12 @@ public:
         // ====== SET NOTE PARAMETERS =======
         excitation.setDampening (velToDampenExcitation);
         karplusStrong.setDampening (velToDampenString);
-        formants.setCoeff (velToFormantWidth, velToFormantQ);
+        
+        karplusStrong.setFeedback (velToFeedback);
+        
+        freq = juce::MidiMessage::getMidiNoteInHertz (midiNoteNumber);
         karplusStrong.setPitch (freq);
-        karplusStrong.setFeedback (velToFeedback); // Feedback between 0-1
+        triOsc.setFrequency (freq);
 
         vol = velToVol;
         
@@ -149,14 +127,7 @@ public:
         impulseADSR.noteOn();
 
     }
-    //--------------------------------------------------------------------------
-    /// Called when a MIDI noteOff message is received
-    /**
-     What should be done when a note stops
 
-     @param / unused variable
-     @param allowTailOff bool to decide if there should be any volume decay
-     */
     void stopNote(float /*velocity*/, bool allowTailOff) override
     {
         // ====== TRIGGER OFF ENVELOPES =======
@@ -167,16 +138,15 @@ public:
     }
 
      // ====== DSP BLOCK =======
-    void renderNextBlock(juce::AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override
+    void renderNextBlock(juce::AudioSampleBuffer &outputBuffer, int startSample, int numSamples) override
     {
-        jassert (isPrepared); // Prepared to play?
+        jassert (isPrepared);
         
-        if (! isVoiceActive()) // If Voice is silent, return without doing anything
+        if (! isVoiceActive())
             return;
-        
 
         // ====== ADSR =======
-        generalADSR.updateADSR (0.1, relativeSustainTime, 1.0f, relativeSustainTime); // Make sure to end after feedback release
+        generalADSR.updateADSR (0.1, relativeSustainTime, 1.0f, relativeSustainTime);
         impulseADSR.updateADSR (0.01f, 0.1f, velToSustainExcitation * 0.3, 0.02f);
 
         // ====== DSP LOOP =======
@@ -186,13 +156,12 @@ public:
             float globalEnv = generalADSR.getNextSample(); // Global envelope
             float impulseEnv = impulseADSR.getNextSample(); // White Noise envelope
                             
-            // ====== CHANNEL ASSIGNMENT =======
+            // ====== CHANNEL ASSIGNMENT ======= THIS COULD BE REFACTORED
             for (int chan = 0; chan < outputBuffer.getNumChannels(); chan++)
             {
                 // ====== STEREO DSP =======
-                float currentSample = excitation.process();
+                float currentSample = triOsc.process();
                 currentSample *= impulseEnv;
-                currentSample = formants.process (currentSample);
                 currentSample = karplusStrong.process (currentSample);
                 
                 currentSample *= globalEnv; // ADSR
@@ -200,9 +169,6 @@ public:
                 
                 outputBuffer.addSample (chan, sampleIndex, currentSample);
                 
-                // DO SOME HAAS MAGIC HERE
-                
-                // if adsr is not active, clear current note
                 if (! generalADSR.isActive())
                     clearCurrentNote();
             }
@@ -220,9 +186,6 @@ public:
         return dynamic_cast<MySynthSound*> (sound) != nullptr;
     }
     //--------------------------------------------------------------------------
-    
-    // Needs to be public
-    Formants formants;
     
 private:
     // ====== NOTE ON/OFF =======   
@@ -266,24 +229,17 @@ private:
     ADSRData generalADSR, impulseADSR;
     float relativeSustainTime;
 
-    // ====== IMPULSE =======
     Excitation excitation;
+    juce::Random random;
     
-    // ====== FILTERBANK =======
-    juce::Random random; // for Filterbank
-//    juce::OwnedArray<juce::IIRFilter> formants;
-//    float exColour = 0.0f; // Setting up colouration - for some reason it sounded differently when exciter was assigned to formants directly
-//    int formantAmount = 6;
-
-    // ====== KARPLUS STRONG =======
     KarplusStrong karplusStrong;
 
-    // ====== GLOBAL VOLUME =======   
-    juce::SmoothedValue<float> globalVol;
+    TriOsc triOsc;
+    
 
-    // ====== UTILITY =======   
     float freq; // Frequency of Synth
     float sr; // Samplerate
     float vol;
+    juce::SmoothedValue<float> globalVol;
 };
 

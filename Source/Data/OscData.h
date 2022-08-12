@@ -35,7 +35,7 @@ public:
                 break;
                 
             default:
-                jassertfalse; /// Pause plugin execution if none of the above is selected
+                jassertfalse; // Pause plugin execution if none of the above is selected
                 break;
         }
     }
@@ -48,8 +48,8 @@ public:
     
     void setWaveFrequency (const int midiNoteNumber)
     {
-        setFrequency (juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber) + fmMod); // Midi Note Number to Freq with frequency modulation
-        lastMidiNote = midiNoteNumber; // make midiNote available elsewhere
+        setFrequency (juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber) + fmMod);
+        lastMidiNote = midiNoteNumber; // make midiNote available
     };
     
     void getNextAudioBlock (juce::dsp::AudioBlock<float>& block)

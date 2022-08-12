@@ -32,13 +32,6 @@ KarPlusPlus2AudioProcessor::KarPlusPlus2AudioProcessor()
     }
 
     synth.addSound (new MySynthSound()); // Synth Sound allocates
-
-    // ====== FORMANTS SETUP =======
-    for (int i = 0; i < voiceCount; i++)
-    {
-    MySynthVoice* v = dynamic_cast<MySynthVoice*> (synth.getVoice(i));
-    v->formants.setFormants();
-    }
 }
 
 KarPlusPlus2AudioProcessor::~KarPlusPlus2AudioProcessor()
@@ -117,7 +110,7 @@ void KarPlusPlus2AudioProcessor::prepareToPlay(double sampleRate, int samplesPer
     for (int i = 0; i < voiceCount; i++)
     {
         MySynthVoice* v = dynamic_cast<MySynthVoice*>(synth.getVoice(i)); //returns a pointer to synthesiser voice
-        v->prepareToPlay(sampleRate);
+        v->prepareToPlay(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     }
 }
 
